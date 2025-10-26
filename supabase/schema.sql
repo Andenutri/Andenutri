@@ -243,74 +243,20 @@ CREATE TRIGGER update_clientes_data_atualizacao BEFORE UPDATE ON clientes
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ================================================
--- ROW LEVEL SECURITY (RLS)
+-- ROW LEVEL SECURITY (RLS) - DESABILITADO PARA DESENVOLVIMENTO
 -- ================================================
 
--- Habilitar RLS em todas as tabelas
-ALTER TABLE clientes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE formularios_pre_consulta ENABLE ROW LEVEL SECURITY;
-ALTER TABLE avaliacoes_fisicas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE avaliacoes_emocionais ENABLE ROW LEVEL SECURITY;
-ALTER TABLE avaliacoes_comportamentais ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cardapios ENABLE ROW LEVEL SECURITY;
-ALTER TABLE kanban_colunas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE planos_assinatura ENABLE ROW LEVEL SECURITY;
-ALTER TABLE consultas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE reavaliacoes ENABLE ROW LEVEL SECURITY;
-
--- Policies: Permitir todas as operações para usuários autenticados
--- (Ajustar conforme necessário para seu caso de uso)
-
-CREATE POLICY "Enable all for authenticated users" ON clientes
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Enable all for authenticated users" ON formularios_pre_consulta
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Enable all for authenticated users" ON avaliacoes_fisicas
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Enable all for authenticated users" ON avaliacoes_emocionais
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Enable all for authenticated users" ON avaliacoes_comportamentais
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Enable all for authenticated users" ON cardapios
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Enable all for authenticated users" ON kanban_colunas
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Enable all for authenticated users" ON planos_assinatura
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Enable all for authenticated users" ON consultas
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
-CREATE POLICY "Enable all for authenticated users" ON reavaliacoes
-  FOR ALL USING (auth.uid() IS NOT NULL);
-
--- ================================================
--- VIEW: Clientes Completos
--- ================================================
-CREATE OR REPLACE VIEW clientes_completos AS
-SELECT 
-  c.*,
-  f.id as formulario_id,
-  f.peso_atual as peso_atual_formulario,
-  f.peso_desejado as peso_desejado_formulario,
-  COUNT(DISTINCT af.id) as total_avaliacoes_fisicas,
-  COUNT(DISTINCT ae.id) as total_avaliacoes_emocionais,
-  COUNT(DISTINCT cp.id) as total_cardapios,
-  COUNT(DISTINCT cs.id) as total_consultas
-FROM clientes c
-LEFT JOIN formularios_pre_consulta f ON c.id = f.cliente_id
-LEFT JOIN avaliacoes_fisicas af ON c.id = af.cliente_id
-LEFT JOIN avaliacoes_emocionais ae ON c.id = ae.cliente_id
-LEFT JOIN cardapios cp ON c.id = cp.cliente_id
-LEFT JOIN consultas cs ON c.id = cs.cliente_id
-GROUP BY c.id, f.id;
+-- DESABILITAR RLS em todas as tabelas (para desenvolvimento)
+ALTER TABLE clientes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE formularios_pre_consulta DISABLE ROW LEVEL SECURITY;
+ALTER TABLE avaliacoes_fisicas DISABLE ROW LEVEL SECURITY;
+ALTER TABLE avaliacoes_emocionais DISABLE ROW LEVEL SECURITY;
+ALTER TABLE avaliacoes_comportamentais DISABLE ROW LEVEL SECURITY;
+ALTER TABLE cardapios DISABLE ROW LEVEL SECURITY;
+ALTER TABLE kanban_colunas DISABLE ROW LEVEL SECURITY;
+ALTER TABLE planos_assinatura DISABLE ROW LEVEL SECURITY;
+ALTER TABLE consultas DISABLE ROW LEVEL SECURITY;
+ALTER TABLE reavaliacoes DISABLE ROW LEVEL SECURITY;
 
 -- ================================================
 -- DADOS INICIAIS
@@ -325,4 +271,3 @@ INSERT INTO kanban_colunas (nome, cor, ordem) VALUES
 -- ================================================
 -- FIM DO SCHEMA
 -- ================================================
-
