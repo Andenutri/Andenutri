@@ -1,2 +1,1 @@
-# Minimal requirements for Vercel
-
+# No dependencies needed - using Python standard library
