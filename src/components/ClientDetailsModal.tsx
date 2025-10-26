@@ -6,6 +6,9 @@ import AddClientModal from './AddClientModal';
 import ReavaliacaoModal from './ReavaliacaoModal';
 import PlalhaEvolucaoModal from './PlalhaEvolucaoModal';
 import EditarInformacoesBasicasModal from './EditarInformacoesBasicasModal';
+import EditarPreConsultaModal from './EditarPreConsultaModal';
+import EditarAvaliacaoFisicaModal from './EditarAvaliacaoFisicaModal';
+import EditarAvaliacaoEmocionalModal from './EditarAvaliacaoEmocionalModal';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -27,6 +30,9 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
   const [showReavaliacaoModal, setShowReavaliacaoModal] = useState(false);
   const [showPlalhaEvolucaoModal, setShowPlalhaEvolucaoModal] = useState(false);
   const [showEditarBasicasModal, setShowEditarBasicasModal] = useState(false);
+  const [showEditarPreConsultaModal, setShowEditarPreConsultaModal] = useState(false);
+  const [showEditarAvaliacaoFisicaModal, setShowEditarAvaliacaoFisicaModal] = useState(false);
+  const [showEditarAvaliacaoEmocionalModal, setShowEditarAvaliacaoEmocionalModal] = useState(false);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [sectionToEdit, setSectionToEdit] = useState<string | null>(null);
 
@@ -110,10 +116,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                     <span className="text-2xl">{sectionsExpanded.preconsulta ? '−' : '+'}</span>
                   </button>
                   <button
-                    onClick={() => {
-                      setSectionToEdit('preconsulta');
-                      setShowEditClientModal(true);
-                    }}
+                    onClick={() => setShowEditarPreConsultaModal(true)}
                     className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
                     title="Editar esta seção"
                   >
@@ -155,10 +158,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                   <span className="text-2xl">{sectionsExpanded.avaliacaoFisica ? '−' : '+'}</span>
                 </button>
                 <button
-                  onClick={() => {
-                    setSectionToEdit('avaliacaoFisica');
-                    setShowEditClientModal(true);
-                  }}
+                  onClick={() => setShowEditarAvaliacaoFisicaModal(true)}
                   className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
                   title="Editar esta seção"
                 >
@@ -221,10 +221,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                   <span className="text-2xl">{sectionsExpanded.avaliacaoEmocional ? '−' : '+'}</span>
                 </button>
                 <button
-                  onClick={() => {
-                    setSectionToEdit('avaliacaoEmocional');
-                    setShowEditClientModal(true);
-                  }}
+                  onClick={() => setShowEditarAvaliacaoEmocionalModal(true)}
                   className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
                   title="Editar esta seção"
                 >
@@ -449,9 +446,49 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
           isOpen={showEditarBasicasModal}
           onClose={() => {
             setShowEditarBasicasModal(false);
-            // Recarregar dados do cliente após edição
             if (cliente?.id) {
-              // TODO: Recarregar dados do Supabase/localStorage
+              window.location.reload();
+            }
+          }}
+          cliente={cliente}
+        />
+      )}
+
+      {/* Modal de Editar Pré-Consulta */}
+      {showEditarPreConsultaModal && (
+        <EditarPreConsultaModal
+          isOpen={showEditarPreConsultaModal}
+          onClose={() => {
+            setShowEditarPreConsultaModal(false);
+            if (cliente?.id) {
+              window.location.reload();
+            }
+          }}
+          cliente={cliente}
+        />
+      )}
+
+      {/* Modal de Editar Avaliação Física */}
+      {showEditarAvaliacaoFisicaModal && (
+        <EditarAvaliacaoFisicaModal
+          isOpen={showEditarAvaliacaoFisicaModal}
+          onClose={() => {
+            setShowEditarAvaliacaoFisicaModal(false);
+            if (cliente?.id) {
+              window.location.reload();
+            }
+          }}
+          cliente={cliente}
+        />
+      )}
+
+      {/* Modal de Editar Avaliação Emocional */}
+      {showEditarAvaliacaoEmocionalModal && (
+        <EditarAvaliacaoEmocionalModal
+          isOpen={showEditarAvaliacaoEmocionalModal}
+          onClose={() => {
+            setShowEditarAvaliacaoEmocionalModal(false);
+            if (cliente?.id) {
               window.location.reload();
             }
           }}
