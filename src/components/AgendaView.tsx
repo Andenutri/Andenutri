@@ -225,6 +225,44 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
         {visualizacao === 'semana' && renderizarSemana()}
         {visualizacao === 'mes' && renderizarMes()}
         {visualizacao === 'ano' && renderizarAno()}
+
+        {/* Lista de Próximos Eventos - Visível sempre */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">🔔 Próximos Eventos</h2>
+          
+          {eventos.slice(0, 10).map((evento, idx) => {
+            const dataEvento = new Date(evento.data);
+            const hoje = new Date();
+            const diasRestantes = Math.ceil((dataEvento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+
+            return (
+              <div
+                key={idx}
+                className={`p-4 rounded-lg border-l-4 mb-3 cursor-pointer hover:shadow-md transition-all ${
+                  getCorEvento(evento.tipo)
+                }`}
+                onClick={() => {
+                  setEventoSelecionado(evento);
+                  setShowDetailsModal(true);
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-gray-800">{evento.titulo}</h3>
+                    <p className="text-sm text-gray-600">
+                      {dataEvento.toLocaleDateString('pt-BR')} {evento.hora && `às ${evento.hora}`}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm text-gray-600">
+                      {diasRestantes >= 0 ? `Em ${diasRestantes} dias` : 'Passado'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Modal Adicionar Evento */}
@@ -478,47 +516,6 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
           </div>
         </div>
         )}
-
-      </div>
-
-        {/* Lista de Próximos Eventos - Visível sempre */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">🔔 Próximos Eventos</h2>
-          
-          {eventos.slice(0, 10).map((evento, idx) => {
-            const dataEvento = new Date(evento.data);
-            const hoje = new Date();
-            const diasRestantes = Math.ceil((dataEvento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
-
-            return (
-              <div
-                key={idx}
-                className={`p-4 rounded-lg border-l-4 mb-3 cursor-pointer hover:shadow-md transition-all ${
-                  getCorEvento(evento.tipo)
-                }`}
-                onClick={() => {
-                  setEventoSelecionado(evento);
-                  setShowDetailsModal(true);
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-gray-800">{evento.titulo}</h3>
-                    <p className="text-sm text-gray-600">
-                      {dataEvento.toLocaleDateString('pt-BR')} {evento.hora && `às ${evento.hora}`}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-sm text-gray-600">
-                      {diasRestantes >= 0 ? `Em ${diasRestantes} dias` : 'Passado'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Modal Adicionar Evento */}
       {showAddEventoModal && (
