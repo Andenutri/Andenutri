@@ -25,6 +25,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
   const [showEditClientModal, setShowEditClientModal] = useState(false);
   const [showReavaliacaoModal, setShowReavaliacaoModal] = useState(false);
   const [showPlalhaEvolucaoModal, setShowPlalhaEvolucaoModal] = useState(false);
+  const [editingSection, setEditingSection] = useState<string | null>(null);
   const [sectionToEdit, setSectionToEdit] = useState<string | null>(null);
 
   const toggleSection = (section: keyof typeof sectionsExpanded) => {
@@ -62,10 +63,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                   <span className="text-2xl">{sectionsExpanded.basicas ? '−' : '+'}</span>
                 </button>
                 <button
-                  onClick={() => {
-                    setSectionToEdit('basicas');
-                    setShowEditClientModal(true);
-                  }}
+                  onClick={() => setEditingSection('basicas')}
                   className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
                   title="Editar esta seção"
                 >
