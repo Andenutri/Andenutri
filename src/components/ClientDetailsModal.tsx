@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
 import AddClientModal from './AddClientModal';
 import ReavaliacaoModal from './ReavaliacaoModal';
+import PlalhaEvolucaoModal from './PlalhaEvolucaoModal';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
 
   const [showEditClientModal, setShowEditClientModal] = useState(false);
   const [showReavaliacaoModal, setShowReavaliacaoModal] = useState(false);
+  const [showPlalhaEvolucaoModal, setShowPlalhaEvolucaoModal] = useState(false);
   const [sectionToEdit, setSectionToEdit] = useState<string | null>(null);
 
   const toggleSection = (section: keyof typeof sectionsExpanded) => {
@@ -378,6 +380,15 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               <button
                 onClick={() => {
                   onClose();
+                  setShowPlalhaEvolucaoModal(true);
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg"
+              >
+                📊 Planilha de Evolução
+              </button>
+              <button
+                onClick={() => {
+                  onClose();
                   setShowEditClientModal(true);
                 }}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg"
@@ -386,7 +397,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Fechar
               </button>
@@ -414,6 +425,18 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
           isOpen={showReavaliacaoModal}
           onClose={() => {
             setShowReavaliacaoModal(false);
+          }}
+          clienteId={cliente?.id || ''}
+          clienteNome={cliente?.nome || ''}
+        />
+      )}
+
+      {/* Modal de Planilha de Evolução */}
+      {showPlalhaEvolucaoModal && (
+        <PlalhaEvolucaoModal
+          isOpen={showPlalhaEvolucaoModal}
+          onClose={() => {
+            setShowPlalhaEvolucaoModal(false);
           }}
           clienteId={cliente?.id || ''}
           clienteNome={cliente?.nome || ''}
