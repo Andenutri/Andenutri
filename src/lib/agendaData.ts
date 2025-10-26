@@ -97,14 +97,7 @@ export async function buscarTodosEventos(clientes: any[]): Promise<EventoAgenda[
 // Função para buscar eventos do Supabase (futuro)
 export async function buscarEventosSupabase(): Promise<EventoAgenda[]> {
   try {
-    // Verificar se está conectado ao Supabase
-    const { isSupabaseConnected } = await import('../lib/agendaUtils');
-    
-    if (!isSupabaseConnected()) {
-      return [];
-    }
-    
-    // TODO: Implementar busca no Supabase
+    // TODO: Implementar busca no Supabase quando configurado
     // const { supabase } = await import('./supabase');
     // const { data, error } = await supabase
     //   .from('consultas')
