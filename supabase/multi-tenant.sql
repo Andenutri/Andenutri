@@ -149,12 +149,12 @@ CREATE INDEX IF NOT EXISTS idx_cliente_acessos_email ON cliente_acessos(email);
 
 -- Criar tenant demo
 INSERT INTO tenants (id, nome, tema_cor)
-VALUES ('demo-tenant-123', 'Demo Tenant', '#d97706')
+VALUES ('550e8400-e29b-41d4-a716-446655440000', 'Demo Tenant', '#d97706')
 ON CONFLICT DO NOTHING;
 
 -- Criar usuário demo
 INSERT INTO usuarios (id, tenant_id, email, senha, nome, plano)
-VALUES ('demo-user-123', 'demo-tenant-123', 'demo@andenutri.com', 'demo123', 'Demo Coach', 'premium')
+VALUES ('550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440000', 'demo@andenutri.com', 'demo123', 'Demo Coach', 'premium')
 ON CONFLICT DO NOTHING;
 
 -- ================================================
