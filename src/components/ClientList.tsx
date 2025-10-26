@@ -1,12 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { getAllClientes } from '@/data/mockClientes';
+import { getAllClientes, ClienteComFormulario } from '@/data/mockClientes';
 import AddClientModal from './AddClientModal';
+import ClientDetailsModal from './ClientDetailsModal';
 
 export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
   const clientes = getAllClientes();
   const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [showClientDetailsModal, setShowClientDetailsModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
+
+  const openClientDetails = (cliente: ClienteComFormulario) => {
+    setSelectedClient(cliente);
+    setShowClientDetailsModal(true);
+  };
 
   return (
     <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
@@ -26,7 +34,11 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
       <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {clientes.map((cliente) => (
-            <div key={cliente.id} className="bg-white rounded-xl shadow-lg p-6 hover:scale-105 transition-transform cursor-pointer border-l-4 border-amber-500">
+            <div 
+              key={cliente.id} 
+              onClick={() => openClientDetails(cliente)}
+              className="bg-white rounded-xl shadow-lg p-6 hover:scale-105 transition-transform cursor-pointer border-l-4 border-amber-500"
+            >
               <h3 className="text-xl font-bold text-gray-800 mb-2">{cliente.nome}</h3>
               <p className="text-sm text-gray-600 mb-1">📧 {cliente.email}</p>
               <p className="text-sm text-gray-600 mb-1">📱 {cliente.whatsapp}</p>
@@ -49,6 +61,16 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
       <AddClientModal
         isOpen={showAddClientModal}
         onClose={() => setShowAddClientModal(false)}
+      />
+
+      {/* Modal Detalhes do Cliente */}
+      <ClientDetailsModal
+        isOpen={showClientDetailsModal}
+        onClose={() => {
+          setShowClientDetailsModal(false);
+          setSelectedClient(null);
+        }}
+        cliente={selectedClient}
       />
     </div>
   );
