@@ -17,8 +17,7 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   height: 100%;
   width: 100%;
-  position: fixed;
-  overflow: hidden;
+  overflow: auto;
 }
 
 #__next {

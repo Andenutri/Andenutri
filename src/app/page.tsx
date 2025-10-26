@@ -12,7 +12,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200">
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
         className="fixed top-5 left-5 z-50 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-5 py-3 rounded-xl text-xl shadow-lg hover:scale-105 transition-all"
