@@ -10,8 +10,8 @@ export function isSupabaseConnected(): boolean {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   
   // Verificar se as variáveis existem e são válidas
-  const isUrlValid = url && url !== '' && url !== 'https://xxxxx.supabase.co' && url.startsWith('https://');
-  const isKeyValid = key && key !== '' && key.startsWith('eyJ');
+  const isUrlValid = Boolean(url && url !== '' && url !== 'https://xxxxx.supabase.co' && url.startsWith('https://'));
+  const isKeyValid = Boolean(key && key !== '' && key.startsWith('eyJ'));
   
   return isUrlValid && isKeyValid;
 }
