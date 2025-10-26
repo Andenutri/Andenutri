@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
 import AddClientModal from './AddClientModal';
+import ReavaliacaoModal from './ReavaliacaoModal';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
   });
 
   const [showEditClientModal, setShowEditClientModal] = useState(false);
+  const [showReavaliacaoModal, setShowReavaliacaoModal] = useState(false);
 
   const toggleSection = (section: keyof typeof sectionsExpanded) => {
     setSectionsExpanded(prev => ({
@@ -291,13 +293,11 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                   <span className="text-2xl">{sectionsExpanded.reavaliacoes ? '−' : '+'}</span>
                 </button>
                 <button
-                  onClick={() => {
-                    setShowEditClientModal(true);
-                  }}
-                  className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
-                  title="Editar esta seção"
+                  onClick={() => setShowReavaliacaoModal(true)}
+                  className="mx-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold"
+                  title="Adicionar nova reavaliação"
                 >
-                  ✏️ Editar
+                  ➕ Nova Reavaliação
                 </button>
               </div>
               
@@ -398,6 +398,18 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
             setShowEditClientModal(false);
           }}
           clienteParaEditar={cliente}
+        />
+      )}
+
+      {/* Modal de Reavaliação */}
+      {showReavaliacaoModal && (
+        <ReavaliacaoModal
+          isOpen={showReavaliacaoModal}
+          onClose={() => {
+            setShowReavaliacaoModal(false);
+          }}
+          clienteId={cliente?.id || ''}
+          clienteNome={cliente?.nome || ''}
         />
       )}
     </>
