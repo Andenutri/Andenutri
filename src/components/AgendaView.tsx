@@ -22,6 +22,14 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [showAddEventoModal, setShowAddEventoModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [eventoSelecionado, setEventoSelecionado] = useState<Evento | null>(null);
+  const [novoEvento, setNovoEvento] = useState({
+    titulo: '',
+    data: '',
+    hora: '',
+    tipo: 'compromisso' as const,
+    cliente_id: '',
+    descricao: '',
+  });
 
   const clientes = getAllClientes();
 
@@ -70,6 +78,43 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
   const hoje = () => {
     setMesVisualizacao(new Date().getMonth());
     setAnoVisualizacao(new Date().getFullYear());
+  };
+
+  const adicionarEvento = () => {
+    if (!novoEvento.titulo || !novoEvento.data) {
+      alert('Por favor, preencha título e data');
+      return;
+    }
+
+    const evento: Evento = {
+      id: Date.now().toString(),
+      titulo: novoEvento.titulo,
+      data: novoEvento.data,
+      hora: novoEvento.hora || undefined,
+      tipo: novoEvento.tipo,
+      descricao: novoEvento.descricao,
+    };
+
+    // Salvar no localStorage
+    const eventosAtuais = JSON.parse(localStorage.getItem('eventos_agenda') || '[]');
+    eventosAtuais.push(evento);
+    localStorage.setItem('eventos_agenda', JSON.stringify(eventosAtuais));
+
+    // Atualizar lista
+    setEventos([...eventos, evento]);
+    
+    // Limpar formulário
+    setNovoEvento({
+      titulo: '',
+      data: '',
+      hora: '',
+      tipo: 'compromisso',
+      cliente_id: '',
+      descricao: '',
+    });
+
+    setShowAddEventoModal(false);
+    alert('✅ Evento salvo com sucesso!');
   };
 
   const diasDaSemana = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
@@ -276,6 +321,8 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
                 <input
                   type="text"
+                  value={novoEvento.titulo}
+                  onChange={(e) => setNovoEvento({...novoEvento, titulo: e.target.value})}
                   placeholder="Ex: Consulta com Maria"
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
                 />
@@ -286,6 +333,8 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Data</label>
                   <input
                     type="date"
+                    value={novoEvento.data}
+                    onChange={(e) => setNovoEvento({...novoEvento, data: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
                   />
                 </div>
@@ -293,6 +342,8 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Hora</label>
                   <input
                     type="time"
+                    value={novoEvento.hora}
+                    onChange={(e) => setNovoEvento({...novoEvento, hora: e.target.value})}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
                   />
                 </div>
@@ -300,12 +351,27 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-                <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none">
+                <select
+                  value={novoEvento.tipo}
+                  onChange={(e) => setNovoEvento({...novoEvento, tipo: e.target.value as any})}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                >
                   <option value="compromisso">Compromisso</option>
                   <option value="consulta">Consulta</option>
                   <option value="vencimento">Vencimento</option>
                   <option value="aniversario">Aniversário</option>
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Descrição (opcional)</label>
+                <textarea
+                  value={novoEvento.descricao}
+                  onChange={(e) => setNovoEvento({...novoEvento, descricao: e.target.value})}
+                  placeholder="Observações adicionais..."
+                  rows={3}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                />
               </div>
 
               <div className="flex gap-4">
@@ -316,7 +382,7 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
                   Cancelar
                 </button>
                 <button
-                  onClick={() => alert('Evento salvo!')}
+                  onClick={adicionarEvento}
                   className="flex-1 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:scale-105 shadow-lg"
                 >
                   Salvar
