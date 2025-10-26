@@ -157,13 +157,6 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
     );
   };
 
-  const adicionarEvento = (evento: Evento) => {
-    const novosEventos = [...eventos, evento];
-    localStorage.setItem('eventos_agenda', JSON.stringify(novosEventos));
-    setEventos(novosEventos);
-    setShowAddEventoModal(false);
-  };
-
   return (
     <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
       <div className="bg-white shadow-md px-8 py-6 flex items-center justify-between">
