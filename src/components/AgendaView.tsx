@@ -477,8 +477,11 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
             })}
           </div>
         </div>
+        )}
 
-        {/* Lista de Próximos Eventos */}
+      </div>
+
+        {/* Lista de Próximos Eventos - Visível sempre */}
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">🔔 Próximos Eventos</h2>
           
