@@ -3,7 +3,18 @@
 -- Execute este script no SQL Editor do Supabase
 -- ================================================
 
--- 1. Criar tabela de USUARIOS (Coaches)
+-- 1. Criar tabela de TENANTS primeiro (sem dependências)
+CREATE TABLE IF NOT EXISTS tenants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome TEXT NOT NULL,
+  dominio_customizado TEXT UNIQUE,
+  logo_url TEXT,
+  tema_cor TEXT DEFAULT '#d97706', -- Cor padrão âmbar
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 2. Criar tabela de USUARIOS (depois de tenants)
 CREATE TABLE IF NOT EXISTS usuarios (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id UUID NOT NULL,
@@ -14,18 +25,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   ativo BOOLEAN DEFAULT true,
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW(),
-  FOREIGN KEY (tenant_id) REFERENCES tenants(id)
-);
-
--- 2. Criar tabela de TENANTS (Organizações)
-CREATE TABLE IF NOT EXISTS tenants (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  nome TEXT NOT NULL,
-  dominio_customizado TEXT UNIQUE,
-  logo_url TEXT,
-  tema_cor TEXT DEFAULT '#d97706', -- Cor padrão âmbar
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+  FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 );
 
 -- 3. Criar tabela de ACESSOS DE CLIENTES
