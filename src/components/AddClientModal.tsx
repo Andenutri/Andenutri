@@ -67,6 +67,13 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validar se pelo menos um campo foi preenchido
+    if (!formData.nome && !formData.email && !formData.telefone && !formData.whatsapp) {
+      alert('Por favor, preencha pelo menos um campo');
+      return;
+    }
+    
     alert(clienteParaEditar ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!');
     onClose();
   };
@@ -94,20 +101,18 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
             <h3 className="text-lg font-bold text-amber-700 mb-4">👤 Informações Básicas</h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
                 <input 
                   type="text"
-                  required
                   value={formData.nome}
                   onChange={(e) => setFormData({...formData, nome: e.target.value})}
                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
                 <input 
                   type="email"
-                  required
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
