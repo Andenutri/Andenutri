@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import './globals.css';
 
 export const metadata: Metadata = {
   title: '🥗 ANDENUTRI - Dashboard',
@@ -11,8 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
-      <body>{children}</body>
+    <html lang="pt-BR" className="h-full">
+      <body className="h-full overflow-hidden">{children}</body>
     </html>
   );
 }
