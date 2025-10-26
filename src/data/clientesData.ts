@@ -42,11 +42,33 @@ export async function getAllClientes(): Promise<ClienteComFormulario[]> {
 
 // Função para criar/atualizar cliente
 export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
-  // Se não estiver conectado, apenas alerta
+  // Se não estiver conectado ao Supabase, permite salvar localmente
   if (!isSupabaseConnected()) {
-    console.warn('⚠️ Supabase não configurado. Dados salvos localmente apenas.');
-    alert('⚠️ Atenção: Você precisa configurar o Supabase para salvar os dados permanentemente!\n\nConfigure o arquivo .env.local com suas credenciais do Supabase.\n\nVeja: docs/COMO_CONFIGURAR_SUPABASE.md');
-    return;
+    console.warn('⚠️ Supabase não configurado. Salvando localmente.');
+    
+    // Salvar em localStorage como fallback
+    const clientesLocal = localStorage.getItem('clientes');
+    const clientesList = clientesLocal ? JSON.parse(clientesLocal) : [];
+    
+    if (cliente.id) {
+      // Atualizar existente
+      const index = clientesList.findIndex((c: any) => c.id === cliente.id);
+      if (index >= 0) {
+        clientesList[index] = { ...clientesList[index], ...cliente };
+      }
+    } else {
+      // Novo cliente
+      const novoCliente = {
+        id: Date.now().toString(),
+        ...cliente,
+        data_criacao: new Date().toISOString(),
+      };
+      clientesList.push(novoCliente);
+    }
+    
+    localStorage.setItem('clientes', JSON.stringify(clientesList));
+    alert('✅ Cliente salvo localmente! Configure o Supabase para sincronização permanente.\n\nVeja: CONFIGURAR_SUPABASE.txt');
+    return cliente;
   }
 
   try {

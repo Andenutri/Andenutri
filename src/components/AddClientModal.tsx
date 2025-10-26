@@ -75,13 +75,7 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
       return;
     }
     
-    // Verificar se Supabase está configurado
-    if (!isSupabaseConnected()) {
-      alert('⚠️ Supabase não está configurado! Configure o arquivo .env.local com suas credenciais do Supabase para salvar os dados permanentemente.\n\nConsulte: docs/COMO_CONFIGURAR_SUPABASE.md');
-      return;
-    }
-    
-    // Salvar no Supabase
+    // Salvar (Supabase ou localStorage)
     const clienteData = {
       ...clienteParaEditar,
       nome: formData.nome,
