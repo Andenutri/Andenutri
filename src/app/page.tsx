@@ -5,6 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
 import ClientList from '@/components/ClientList';
 import TrelloView from '@/components/TrelloView';
+import AvaliacoesView from '@/components/AvaliacoesView';
 
 export default function Home() {
   const [view, setView] = useState('dashboard');
@@ -24,6 +25,7 @@ export default function Home() {
       {view === 'dashboard' && <Dashboard sidebarOpen={sidebarOpen} />}
       {view === 'clientes' && <ClientList sidebarOpen={sidebarOpen} />}
       {view === 'trello' && <TrelloView sidebarOpen={sidebarOpen} />}
+      {view === 'avaliacoes' && <AvaliacoesView sidebarOpen={sidebarOpen} />}
     </div>
   );
 }
