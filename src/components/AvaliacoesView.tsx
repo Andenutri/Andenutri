@@ -1,19 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AvaliacaoEmocionalModal from './AvaliacaoEmocionalModal';
 import { getAllClientes, getClientesParaAvaliar, ClienteComFormulario } from '@/data/mockClientes';
 
 interface Avaliacao {
   id: string;
-  cliente: string;
-  data: string;
+  cliente_nome: string;
+  data_avaliacao: string;
 }
 
 export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [showModalEmocional, setShowModalEmocional] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState<ClienteComFormulario | null>(null);
-  const [avaliacoes] = useState<Avaliacao[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
+  
+  useEffect(() => {
+    // Carregar avaliações salvas do localStorage
+    if (typeof window !== 'undefined') {
+      const avaliacoesSalvas = JSON.parse(localStorage.getItem('avaliacoes_emocionais') || '[]');
+      setAvaliacoes(avaliacoesSalvas);
+    }
+  }, [showModalEmocional]); // Recarregar quando o modal fechar
   
   const clientes = getAllClientes();
   const clientesParaAvaliar = getClientesParaAvaliar();
@@ -91,14 +99,36 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
               </div>
             ) : (
               <div className="space-y-4">
-                {avaliacoes.map((avaliacao) => (
-                  <div key={avaliacao.id} className="bg-amber-50 rounded-lg p-4 border border-amber-200">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-gray-800">{avaliacao.cliente}</span>
-                      <span className="text-sm text-gray-600">{avaliacao.data}</span>
+                {avaliacoes.map((avaliacao, index) => {
+                  const dataFormatada = new Date(avaliacao.data_avaliacao).toLocaleDateString('pt-BR');
+                  return (
+                    <div key={index} className="bg-gradient-to-br from-green-50 to-amber-50 rounded-lg p-4 border-2 border-green-200 hover:border-green-400 transition-all cursor-pointer">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <span className="text-2xl">💚</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold text-gray-800 text-lg">{avaliacao.cliente_nome}</span>
+                            <p className="text-sm text-gray-600">{dataFormatada}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold">
+                            ✅ Concluída
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {avaliacao.historia_pessoa && (
+                        <div className="mt-3 p-3 bg-white rounded border border-amber-200">
+                          <p className="text-xs font-semibold text-gray-700 mb-1">📖 História</p>
+                          <p className="text-sm text-gray-600 line-clamp-2">{avaliacao.historia_pessoa}</p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

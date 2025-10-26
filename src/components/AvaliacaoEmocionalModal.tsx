@@ -43,6 +43,47 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: Av
     premia_com_comida: '',
   });
 
+  const [salvando, setSalvando] = useState(false);
+
+  const handleSalvar = async () => {
+    if (!cliente) return;
+    
+    setSalvando(true);
+    
+    try {
+      // Criar objeto de avaliação completa
+      const avaliacaoEmocional = {
+        cliente_id: cliente.id,
+        cliente_nome: cliente.nome,
+        data_avaliacao: new Date().toISOString(),
+        historia_pessoa: historiaPessoa,
+        
+        // Respostas do bloco emocional
+        bloco_emocional: blocoEmocional,
+        
+        // Respostas do bloco comportamental
+        bloco_comportamental: blocoComportamental,
+        
+        // Dados atualizados da pré-consulta (caso editados)
+        dados_formulario: dadosFormulario,
+      };
+
+      // Salvar no localStorage por enquanto (depois vamos adicionar Supabase)
+      const avaliacoes = JSON.parse(localStorage.getItem('avaliacoes_emocionais') || '[]');
+      avaliacoes.push(avaliacaoEmocional);
+      localStorage.setItem('avaliacoes_emocionais', JSON.stringify(avaliacoes));
+
+      alert('✅ Avaliação emocional salva com sucesso!');
+      onClose();
+      
+    } catch (error) {
+      console.error('Erro ao salvar avaliação:', error);
+      alert('❌ Erro ao salvar avaliação. Verifique o console.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -557,10 +598,11 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: Av
             Fechar
           </button>
           <button
-            onClick={() => alert('Avaliação salva com sucesso!')}
-            className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg hover:scale-105 shadow-lg"
+            onClick={handleSalvar}
+            disabled={salvando}
+            className="px-6 py-3 bg-gradient-to-r from-pink-600 to-pink-700 text-white rounded-lg hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            💾 Salvar Avaliação
+            {salvando ? '💾 Salvando...' : '💾 Salvar Avaliação'}
           </button>
         </div>
       </div>
