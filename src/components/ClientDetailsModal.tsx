@@ -23,6 +23,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
 
   const [showEditClientModal, setShowEditClientModal] = useState(false);
   const [showReavaliacaoModal, setShowReavaliacaoModal] = useState(false);
+  const [sectionToEdit, setSectionToEdit] = useState<string | null>(null);
 
   const toggleSection = (section: keyof typeof sectionsExpanded) => {
     setSectionsExpanded(prev => ({
@@ -60,6 +61,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                 </button>
                 <button
                   onClick={() => {
+                    setSectionToEdit('basicas');
                     setShowEditClientModal(true);
                   }}
                   className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
@@ -107,6 +109,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                   </button>
                   <button
                     onClick={() => {
+                      setSectionToEdit('preconsulta');
                       setShowEditClientModal(true);
                     }}
                     className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
@@ -151,6 +154,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                 </button>
                 <button
                   onClick={() => {
+                    setSectionToEdit('avaliacaoFisica');
                     setShowEditClientModal(true);
                   }}
                   className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
@@ -216,6 +220,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                 </button>
                 <button
                   onClick={() => {
+                    setSectionToEdit('avaliacaoEmocional');
                     setShowEditClientModal(true);
                   }}
                   className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
@@ -396,8 +401,10 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
           isOpen={showEditClientModal}
           onClose={() => {
             setShowEditClientModal(false);
+            setSectionToEdit(null);
           }}
           clienteParaEditar={cliente}
+          defaultSection={sectionToEdit}
         />
       )}
 

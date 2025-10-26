@@ -8,9 +8,12 @@ interface AddClientModalProps {
   isOpen: boolean;
   onClose: () => void;
   clienteParaEditar?: ClienteComFormulario | null;
+  defaultSection?: string | null;
 }
 
-export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: AddClientModalProps) {
+export default function AddClientModal({ isOpen, onClose, clienteParaEditar, defaultSection }: AddClientModalProps) {
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     // Informações Básicas
     nome: '',
@@ -41,6 +44,12 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
     // Dados da Pré-Consulta (se disponível)
     formulario: null as any,
   });
+
+  useEffect(() => {
+    if (defaultSection) {
+      setActiveSection(defaultSection);
+    }
+  }, [defaultSection]);
 
   useEffect(() => {
     if (clienteParaEditar) {
