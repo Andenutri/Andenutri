@@ -22,7 +22,7 @@ export default function Home() {
       
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} setView={setView} />
       
-      {view === 'dashboard' && <Dashboard sidebarOpen={sidebarOpen} />}
+      {view === 'dashboard' && <Dashboard sidebarOpen={sidebarOpen} setView={setView} />}
       {view === 'clientes' && <ClientList sidebarOpen={sidebarOpen} />}
       {view === 'trello' && <TrelloView sidebarOpen={sidebarOpen} />}
       {view === 'avaliacoes' && <AvaliacoesView sidebarOpen={sidebarOpen} />}

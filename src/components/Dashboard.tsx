@@ -1,6 +1,6 @@
 'use client';
 
-export default function Dashboard({ sidebarOpen }: { sidebarOpen: boolean }) {
+export default function Dashboard({ sidebarOpen, setView }: { sidebarOpen: boolean; setView: (view: string) => void }) {
   return (
     <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
       <div className="bg-white shadow-md px-8 py-6 flex items-center justify-between">
@@ -42,17 +42,23 @@ export default function Dashboard({ sidebarOpen }: { sidebarOpen: boolean }) {
           <p className="text-xl text-gray-600 mb-6">Sistema completo de gestão para Coach de Bem-Estar</p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-amber-50 p-6 rounded-lg hover:scale-105 transition-transform cursor-pointer">
+            <div 
+              onClick={() => setView('clientes')}
+              className="bg-amber-50 p-6 rounded-lg hover:scale-105 transition-transform cursor-pointer">
               <div className="text-5xl mb-4">👥</div>
               <h3 className="font-bold text-amber-700">Clientes</h3>
               <p className="text-sm text-gray-600">Gestão completa</p>
             </div>
-            <div className="bg-amber-50 p-6 rounded-lg hover:scale-105 transition-transform cursor-pointer">
+            <div 
+              onClick={() => setView('trello')}
+              className="bg-amber-50 p-6 rounded-lg hover:scale-105 transition-transform cursor-pointer">
               <div className="text-5xl mb-4">📋</div>
               <h3 className="font-bold text-amber-700">Trello</h3>
               <p className="text-sm text-gray-600">Visualização</p>
             </div>
-            <div className="bg-amber-50 p-6 rounded-lg hover:scale-105 transition-transform cursor-pointer">
+            <div 
+              onClick={() => setView('dashboard')}
+              className="bg-amber-50 p-6 rounded-lg hover:scale-105 transition-transform cursor-pointer">
               <div className="text-5xl mb-4">📊</div>
               <h3 className="font-bold text-amber-700">Dashboard</h3>
               <p className="text-sm text-gray-600">Estatísticas</p>
