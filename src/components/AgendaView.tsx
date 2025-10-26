@@ -534,6 +534,88 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
         </div>
         )}
 
+      {/* Modal Adicionar Evento */}
+      {showAddEventoModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h2 className="text-2xl font-bold text-amber-700 mb-4">➕ Novo Evento</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Título</label>
+                <input
+                  type="text"
+                  value={novoEvento.titulo}
+                  onChange={(e) => setNovoEvento({...novoEvento, titulo: e.target.value})}
+                  placeholder="Ex: Consulta com Maria"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data</label>
+                  <input
+                    type="date"
+                    value={novoEvento.data}
+                    onChange={(e) => setNovoEvento({...novoEvento, data: e.target.value})}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Hora</label>
+                  <input
+                    type="time"
+                    value={novoEvento.hora}
+                    onChange={(e) => setNovoEvento({...novoEvento, hora: e.target.value})}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                <select
+                  value={novoEvento.tipo}
+                  onChange={(e) => setNovoEvento({...novoEvento, tipo: e.target.value as any})}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                >
+                  <option value="compromisso">Compromisso</option>
+                  <option value="consulta">Consulta</option>
+                  <option value="vencimento">Vencimento</option>
+                  <option value="aniversario">Aniversário</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Descrição (opcional)</label>
+                <textarea
+                  value={novoEvento.descricao}
+                  onChange={(e) => setNovoEvento({...novoEvento, descricao: e.target.value})}
+                  placeholder="Observações adicionais..."
+                  rows={3}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowAddEventoModal(false)}
+                  className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={adicionarEvento}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:scale-105 shadow-lg"
+                >
+                  Salvar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
