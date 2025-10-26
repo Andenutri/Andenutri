@@ -601,4 +601,23 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
       )}
     </div>
   );
+  function renderizarAno() {
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">📅 Ano {anoVisualizacao}</h2>
+        <div className="grid grid-cols-12 gap-4">
+          {meses.map((mes, idx) => {
+            const totalEventos = eventos.filter(e => new Date(e.data).getMonth() === idx).length;
+            return (
+              <div key={idx} className="border rounded-lg p-4 hover:shadow-md transition-all">
+                <h3 className="font-bold text-sm mb-2">{mes}</h3>
+                <p className="text-2xl font-bold text-amber-600">{totalEventos}</p>
+                <p className="text-xs text-gray-500">eventos</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
 }

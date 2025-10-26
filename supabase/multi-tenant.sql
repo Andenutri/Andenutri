@@ -87,24 +87,59 @@ CREATE TABLE IF NOT EXISTS comunicados (
 -- ================================================
 
 -- Adicionar tenant_id em CLIENTES
-ALTER TABLE clientes ADD COLUMN IF NOT EXISTS tenant_id UUID;
-ALTER TABLE clientes ADD CONSTRAINT fk_clientes_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'clientes' AND column_name = 'tenant_id') THEN
+        ALTER TABLE clientes ADD COLUMN tenant_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'fk_clientes_tenant') THEN
+        ALTER TABLE clientes ADD CONSTRAINT fk_clientes_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+    END IF;
+END $$;
 
 -- Adicionar tenant_id em AVALIACOES_FISICAS
-ALTER TABLE avaliacoes_fisicas ADD COLUMN IF NOT EXISTS tenant_id UUID;
-ALTER TABLE avaliacoes_fisicas ADD CONSTRAINT fk_avaliacoes_fisicas_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'avaliacoes_fisicas' AND column_name = 'tenant_id') THEN
+        ALTER TABLE avaliacoes_fisicas ADD COLUMN tenant_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'fk_avaliacoes_fisicas_tenant') THEN
+        ALTER TABLE avaliacoes_fisicas ADD CONSTRAINT fk_avaliacoes_fisicas_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+    END IF;
+END $$;
 
 -- Adicionar tenant_id em AVALIACOES_EMOCIONAIS
-ALTER TABLE avaliacoes_emocionais ADD COLUMN IF NOT EXISTS tenant_id UUID;
-ALTER TABLE avaliacoes_emocionais ADD CONSTRAINT fk_avaliacoes_emocionais_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'avaliacoes_emocionais' AND column_name = 'tenant_id') THEN
+        ALTER TABLE avaliacoes_emocionais ADD COLUMN tenant_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'fk_avaliacoes_emocionais_tenant') THEN
+        ALTER TABLE avaliacoes_emocionais ADD CONSTRAINT fk_avaliacoes_emocionais_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+    END IF;
+END $$;
 
 -- Adicionar tenant_id em CONSULTAS
-ALTER TABLE consultas ADD COLUMN IF NOT EXISTS tenant_id UUID;
-ALTER TABLE consultas ADD CONSTRAINT fk_consultas_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'consultas' AND column_name = 'tenant_id') THEN
+        ALTER TABLE consultas ADD COLUMN tenant_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'fk_consultas_tenant') THEN
+        ALTER TABLE consultas ADD CONSTRAINT fk_consultas_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+    END IF;
+END $$;
 
 -- Adicionar tenant_id em CARDAPIOS
-ALTER TABLE cardapios ADD COLUMN IF NOT EXISTS tenant_id UUID;
-ALTER TABLE cardapios ADD CONSTRAINT fk_cardapios_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'cardapios' AND column_name = 'tenant_id') THEN
+        ALTER TABLE cardapios ADD COLUMN tenant_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'fk_cardapios_tenant') THEN
+        ALTER TABLE cardapios ADD CONSTRAINT fk_cardapios_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id);
+    END IF;
+END $$;
 
 -- ================================================
 -- RLS (Row Level Security) - ISOLAMENTO DE DADOS
