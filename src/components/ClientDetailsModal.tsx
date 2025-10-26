@@ -127,9 +127,43 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               
               {sectionsExpanded.avaliacaoFisica && (
                 <div className="p-4 border-t border-green-200">
-                  <div className="text-center py-4 text-gray-500">
-                    <div className="text-4xl mb-2">📏</div>
-                    <p>Nenhuma avaliação física registrada ainda</p>
+                  {/* Dados Mock - Avaliação Física */}
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg p-4 border border-green-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-green-700">📏 Avaliação Inicial - 15/01/2025</h4>
+                        <span className="text-xs text-gray-500">Inicial</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600">Peso:</span>
+                          <p className="font-bold text-green-700">75kg</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">IMC:</span>
+                          <p className="font-bold text-green-700">26.2</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Cintura:</span>
+                          <p className="font-bold text-green-700">88cm</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Quadril:</span>
+                          <p className="font-bold text-green-700">102cm</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Braço:</span>
+                          <p className="font-bold text-green-700">32cm</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Coxa:</span>
+                          <p className="font-bold text-green-700">58cm</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t">
+                        <span className="text-xs text-gray-500">📸 4 fotos anexadas</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -147,9 +181,56 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               
               {sectionsExpanded.avaliacaoEmocional && (
                 <div className="p-4 border-t border-purple-200">
-                  <div className="text-center py-4 text-gray-500">
-                    <div className="text-4xl mb-2">💚</div>
-                    <p>Nenhuma avaliação emocional registrada ainda</p>
+                  {/* Dados Mock - Avaliação Emocional */}
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg p-4 border border-purple-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-purple-700">💚 Avaliação Emocional - 20/01/2025</h4>
+                        <span className="text-xs text-gray-500">Realizada</span>
+                      </div>
+                      
+                      {/* História da Pessoa */}
+                      <div className="mb-4">
+                        <h5 className="text-sm font-semibold text-gray-700 mb-2">📖 História</h5>
+                        <p className="text-sm text-gray-600 bg-purple-50 p-3 rounded">
+                          "Cliente motivada para mudança após se sentir desconfortável em situações sociais. Histórico de tentativas anteriores frustradas. Mãe de dois filhos, buscando melhor qualidade de vida e autoestima."
+                        </p>
+                      </div>
+
+                      {/* Respostas do Bloco Emocional */}
+                      <div className="mb-4">
+                        <h5 className="text-sm font-semibold text-gray-700 mb-2">🌸 Bloco Emocional</h5>
+                        <div className="space-y-2 text-sm">
+                          <div className="bg-purple-50 p-2 rounded">
+                            <span className="font-medium text-gray-700">Momento de mudança:</span>
+                            <p className="text-gray-600">"Depois de ver fotos em um evento familiar"</p>
+                          </div>
+                          <div className="bg-purple-50 p-2 rounded">
+                            <span className="font-medium text-gray-700">Nível de comprometimento:</span>
+                            <p className="text-gray-600">9/10</p>
+                          </div>
+                          <div className="bg-purple-50 p-2 rounded">
+                            <span className="font-medium text-gray-700">Maior medo:</span>
+                            <p className="text-gray-600">"Não conseguir manter a mudança"</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Respostas do Bloco Comportamental */}
+                      <div>
+                        <h5 className="text-sm font-semibold text-gray-700 mb-2">🌿 Bloco Comportamental</h5>
+                        <div className="space-y-2 text-sm">
+                          <div className="bg-purple-50 p-2 rounded">
+                            <span className="font-medium text-gray-700">Ponto fraco alimentação:</span>
+                            <p className="text-gray-600">"Doces e ansiedade noturna"</p>
+                          </div>
+                          <div className="bg-purple-50 p-2 rounded">
+                            <span className="font-medium text-gray-700">Come por:</span>
+                            <p className="text-gray-600">"Principalmente por emoção (tédio e estresse)"</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -167,9 +248,66 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               
               {sectionsExpanded.reavaliacoes && (
                 <div className="p-4 border-t border-indigo-200">
-                  <div className="text-center py-4 text-gray-500">
-                    <div className="text-4xl mb-2">📈</div>
-                    <p>Nenhuma reavaliação registrada ainda</p>
+                  {/* Dados Mock - Reavaliações */}
+                  <div className="space-y-4">
+                    {/* Reavaliação 1 */}
+                    <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-indigo-700">📏 1ª Reavaliação - 15/02/2025</h4>
+                        <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">✓ Progresso</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600 text-xs">Peso:</span>
+                          <p className="font-bold text-indigo-700">73kg <span className="text-green-600 text-xs">(-2kg)</span></p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 text-xs">IMC:</span>
+                          <p className="font-bold text-indigo-700">25.5 <span className="text-green-600 text-xs">(-0.7)</span></p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 text-xs">Cintura:</span>
+                          <p className="font-bold text-indigo-700">85cm <span className="text-green-600 text-xs">(-3cm)</span></p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 text-xs">Quadril:</span>
+                          <p className="font-bold text-indigo-700">99cm <span className="text-green-600 text-xs">(-3cm)</span></p>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-xs text-gray-600">📝 Observações: "Cliente seguindo protocolo corretamente, aderência 95%"</p>
+                      </div>
+                    </div>
+
+                    {/* Reavaliação 2 */}
+                    <div className="bg-white rounded-lg p-4 border border-indigo-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-indigo-700">📏 2ª Reavaliação - 15/03/2025</h4>
+                        <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">✓ Meta próxima</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-600 text-xs">Peso:</span>
+                          <p className="font-bold text-indigo-700">70kg <span className="text-green-600 text-xs">(-5kg total)</span></p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 text-xs">IMC:</span>
+                          <p className="font-bold text-indigo-700">24.4 <span className="text-green-600 text-xs">(-1.8)</span></p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 text-xs">Cintura:</span>
+                          <p className="font-bold text-indigo-700">82cm <span className="text-green-600 text-xs">(-6cm)</span></p>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 text-xs">Quadril:</span>
+                          <p className="font-bold text-indigo-700">96cm <span className="text-green-600 text-xs">(-6cm)</span></p>
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-xs text-gray-600">🎯 Meta: "Apenas 3kg para o peso desejado!"</p>
+                        <p className="text-xs text-gray-600">📝 Observações: "Muito motivada, sentindo-se mais confiante"</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
