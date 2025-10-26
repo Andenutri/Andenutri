@@ -280,6 +280,7 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
             );
           })}
         </div>
+      </div>
 
       {/* Modal Adicionar Evento */}
       {showAddEventoModal && (
