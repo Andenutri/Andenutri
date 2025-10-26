@@ -4,10 +4,16 @@ import { useState } from 'react';
 import AvaliacaoEmocionalModal from './AvaliacaoEmocionalModal';
 import { getAllClientes, getClientesParaAvaliar, ClienteComFormulario } from '@/data/mockClientes';
 
+interface Avaliacao {
+  id: string;
+  cliente: string;
+  data: string;
+}
+
 export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [showModalEmocional, setShowModalEmocional] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState<ClienteComFormulario | null>(null);
-  const [avaliacoes] = useState([]);
+  const [avaliacoes] = useState<Avaliacao[]>([]);
   
   const clientes = getAllClientes();
   const clientesParaAvaliar = getClientesParaAvaliar();
