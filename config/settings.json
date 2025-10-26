@@ -1,0 +1,21 @@
+{
+  "projeto": {
+    "nome": "ANDENUTRI",
+    "versao": "1.0.0",
+    "descricao": "Projeto personalizado de extração de dados de nutricionistas"
+  },
+  "extracao": {
+    "timeout": 15,
+    "delay": 2,
+    "max_tentativas": 3,
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+  },
+  "campos": {
+    "extrair": ["email", "telefone", "nome", "especialidade", "cidade"]
+  },
+  "pastas": {
+    "dados": "dados/",
+    "logs": "logs/",
+    "output": "output/"
+  }
+}
