@@ -140,7 +140,7 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
                   </button>
                 </div>
 
-                <div className="bg-gray-100 rounded-b-xl p-3 min-h-[500px] space-y-3">
+                <div className="bg-gray-100 rounded-b-xl p-3 min-h-[500px] max-h-[70vh] overflow-y-auto space-y-3">
                   {clientesNaColuna.map((cliente) => (
                     <div
                       key={cliente.id}
