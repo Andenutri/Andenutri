@@ -1,0 +1,77 @@
+====================================================
+COMO CONFIGURAR O SUPABASE PARA SALVAR DADOS
+====================================================
+
+⚠️ PROBLEMA ATUAL:
+Os dados estão sendo salvos apenas em memória (mockData).
+Para salvar permanentemente, você precisa configurar o Supabase.
+
+====================================================
+PASSO A PASSO:
+====================================================
+
+1. CRIAR PROJETO NO SUPABASE:
+   - Acesse: https://supabase.com/dashboard
+   - Faça login ou crie uma conta
+   - Clique em "New Project"
+   - Nome: Andenutri
+   - Database Password: (escolha uma senha)
+   - Region: South America
+   - Clique em "Create new project"
+
+2. EXECUTAR O SCHEMA SQL:
+   - No Dashboard, vá em "SQL Editor"
+   - Clique em "New Query"
+   - Abra o arquivo: supabase/schema.sql
+   - Copie TODO o conteúdo
+   - Cole no SQL Editor
+   - Clique em "Run"
+
+3. OBTER CREDENCIAIS:
+   - Vá em "Project Settings" (ícone de engrenagem)
+   - Clique em "API"
+   - Copie:
+     * Project URL
+     * anon key
+
+4. CRIAR ARQUIVO .env.local:
+   Crie um arquivo chamado .env.local na raiz do projeto:
+   
+   NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon-aqui
+
+5. REINICIAR O SERVIDOR:
+   - Pare o servidor (Ctrl+C)
+   - Execute: npm run dev
+   - Acesse: localhost:3000
+
+====================================================
+RESULTADO:
+====================================================
+
+✅ Agora os dados serão salvos permanentemente no Supabase
+✅ Você poderá salvar qualquer cliente (incluindo "Regina"!)
+✅ Os dados persistirão mesmo após fechar o navegador
+
+====================================================
+VERIFICAÇÃO:
+====================================================
+
+1. Acesse: localhost:3000
+2. Vá em "Clientes"
+3. Clique em "Adicionar Cliente"
+4. Digite apenas o nome "Regina"
+5. Clique em "Cadastrar Cliente"
+6. Se o Supabase estiver configurado: "Cliente salvo com sucesso!"
+7. Se não estiver: Alerta explicando que precisa configurar
+
+====================================================
+ARQUIVOS IMPORTANTES:
+====================================================
+
+- supabase/schema.sql (Script SQL para criar tabelas)
+- docs/COMO_CONFIGURAR_SUPABASE.md (Guia detalhado)
+- docs/SUPABASE_ESTRUTURA.md (Estrutura das tabelas)
+
+====================================================
+

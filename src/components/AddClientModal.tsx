@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
+import { saveCliente, isSupabaseConnected } from '@/data/clientesData';
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -65,7 +66,7 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
     }
   }, [clienteParaEditar]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validar se pelo menos um campo foi preenchido
@@ -74,7 +75,24 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
       return;
     }
     
-    alert(clienteParaEditar ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!');
+    // Verificar se Supabase está configurado
+    if (!isSupabaseConnected()) {
+      alert('⚠️ Supabase não está configurado! Configure o arquivo .env.local com suas credenciais do Supabase para salvar os dados permanentemente.\n\nConsulte: docs/COMO_CONFIGURAR_SUPABASE.md');
+      return;
+    }
+    
+    // Salvar no Supabase
+    const clienteData = {
+      ...clienteParaEditar,
+      nome: formData.nome,
+      email: formData.email,
+      telefone: formData.telefone,
+      whatsapp: formData.whatsapp,
+      instagram: formData.instagram,
+      status_plano: formData.status_programa as 'ativo' | 'inativo' | 'pausado',
+    };
+    
+    await saveCliente(clienteData);
     onClose();
   };
 

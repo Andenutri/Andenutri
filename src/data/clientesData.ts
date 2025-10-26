@@ -1,0 +1,123 @@
+// Gerenciamento de dados de clientes com Supabase
+
+import { ClienteComFormulario } from './mockClientes';
+
+// Verifica se está conectado ao Supabase
+export function isSupabaseConnected(): boolean {
+  return typeof window !== 'undefined' && 
+         process.env.NEXT_PUBLIC_SUPABASE_URL !== '' && 
+         process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://xxxxx.supabase.co';
+}
+
+// Função para obter todos os clientes (mock ou Supabase)
+export async function getAllClientes(): Promise<ClienteComFormulario[]> {
+  // Se não estiver conectado ao Supabase, retorna mock data
+  if (!isSupabaseConnected()) {
+    const { mockClientes } = await import('./mockClientes');
+    return mockClientes;
+  }
+
+  // Buscar do Supabase
+  try {
+    const { supabase } = await import('../lib/supabase');
+    const { data, error } = await supabase
+      .from('clientes')
+      .select('*')
+      .order('data_criacao', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar clientes do Supabase:', error);
+      // Retorna mock como fallback
+      const { mockClientes } = await import('./mockClientes');
+      return mockClientes;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Erro ao importar Supabase:', error);
+    const { mockClientes } = await import('./mockClientes');
+    return mockClientes;
+  }
+}
+
+// Função para criar/atualizar cliente
+export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
+  // Se não estiver conectado, apenas alerta
+  if (!isSupabaseConnected()) {
+    console.warn('⚠️ Supabase não configurado. Dados salvos localmente apenas.');
+    alert('⚠️ Atenção: Você precisa configurar o Supabase para salvar os dados permanentemente!\n\nConfigure o arquivo .env.local com suas credenciais do Supabase.\n\nVeja: docs/COMO_CONFIGURAR_SUPABASE.md');
+    return;
+  }
+
+  try {
+    const { supabase } = await import('../lib/supabase');
+    
+    if (cliente.id) {
+      // Atualizar cliente existente
+      const { data, error } = await supabase
+        .from('clientes')
+        .update({
+          nome: cliente.nome,
+          email: cliente.email,
+          telefone: cliente.telefone,
+          whatsapp: cliente.whatsapp,
+          instagram: cliente.instagram,
+          status_programa: cliente.status_plano,
+          data_atualizacao: new Date().toISOString(),
+        })
+        .eq('id', cliente.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } else {
+      // Criar novo cliente
+      const { data, error } = await supabase
+        .from('clientes')
+        .insert({
+          nome: cliente.nome,
+          email: cliente.email || '',
+          telefone: cliente.telefone || '',
+          whatsapp: cliente.whatsapp || '',
+          instagram: cliente.instagram || '',
+          status_programa: cliente.status_plano || 'ativo',
+          data_criacao: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      alert('✅ Cliente salvo com sucesso no Supabase!');
+      return data;
+    }
+  } catch (error) {
+    console.error('Erro ao salvar no Supabase:', error);
+    alert('❌ Erro ao salvar no Supabase. Verifique o console.');
+  }
+}
+
+// Função para buscar cliente por ID
+export async function getClienteById(id: string): Promise<ClienteComFormulario | undefined> {
+  if (!isSupabaseConnected()) {
+    const { getClienteById } = await import('./mockClientes');
+    return getClienteById(id);
+  }
+
+  try {
+    const { supabase } = await import('../lib/supabase');
+    const { data, error } = await supabase
+      .from('clientes')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Erro ao buscar cliente:', error);
+    return undefined;
+  }
+}
+

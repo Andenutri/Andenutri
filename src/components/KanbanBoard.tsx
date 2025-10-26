@@ -98,7 +98,7 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
     <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
       <div className="bg-white shadow-md px-8 py-6 flex items-center justify-between">
         <div className="ml-24">
-          <h1 className="text-3xl font-bold text-amber-700">📋 Trello/Kanban</h1>
+          <h1 className="text-3xl font-bold text-amber-700">📋 Trello</h1>
           <p className="text-gray-600 mt-1">Organize seus clientes em colunas</p>
         </div>
         <div className="flex gap-4">
@@ -117,7 +117,7 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
         </div>
       </div>
 
-      <div className="p-6 overflow-x-auto">
+      <div className="p-6" style={{ overflowX: 'auto', overflowY: 'visible' }}>
         <div className="flex gap-6 min-w-max">
           {columns.map((column) => {
             const classeCor = getCoresByColumn(column.cor);
