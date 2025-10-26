@@ -48,13 +48,24 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
           <div className="p-6 space-y-4">
             {/* Informações Básicas */}
             <div className="border-2 border-amber-100 rounded-xl bg-amber-50">
-              <button
-                onClick={() => toggleSection('basicas')}
-                className="w-full flex items-center justify-between p-4 font-bold text-amber-800 hover:bg-amber-100 transition-colors rounded-xl"
-              >
-                <h3>📋 Informações Básicas</h3>
-                <span className="text-2xl">{sectionsExpanded.basicas ? '−' : '+'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleSection('basicas')}
+                  className="flex-1 flex items-center justify-between p-4 font-bold text-amber-800 hover:bg-amber-100 transition-colors rounded-xl"
+                >
+                  <h3>📋 Informações Básicas</h3>
+                  <span className="text-2xl">{sectionsExpanded.basicas ? '−' : '+'}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditClientModal(true);
+                  }}
+                  className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                  title="Editar esta seção"
+                >
+                  ✏️ Editar
+                </button>
+              </div>
               
               {sectionsExpanded.basicas && (
                 <div className="p-4 border-t border-amber-200">
@@ -84,13 +95,24 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
             {/* Dados da Pré-Consulta */}
             {cliente.formulario && (
               <div className="border-2 border-blue-100 rounded-xl bg-blue-50">
-                <button
-                  onClick={() => toggleSection('preconsulta')}
-                  className="w-full flex items-center justify-between p-4 font-bold text-blue-800 hover:bg-blue-100 transition-colors rounded-xl"
-                >
-                  <h3>📝 Dados da Pré-Consulta</h3>
-                  <span className="text-2xl">{sectionsExpanded.preconsulta ? '−' : '+'}</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleSection('preconsulta')}
+                    className="flex-1 flex items-center justify-between p-4 font-bold text-blue-800 hover:bg-blue-100 transition-colors rounded-xl"
+                  >
+                    <h3>📝 Dados da Pré-Consulta</h3>
+                    <span className="text-2xl">{sectionsExpanded.preconsulta ? '−' : '+'}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowEditClientModal(true);
+                    }}
+                    className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                    title="Editar esta seção"
+                  >
+                    ✏️ Editar
+                  </button>
+                </div>
                 
                 {sectionsExpanded.preconsulta && (
                   <div className="p-4 border-t border-blue-200 space-y-4">
@@ -117,13 +139,24 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
 
             {/* Avaliação Física */}
             <div className="border-2 border-green-100 rounded-xl bg-green-50">
-              <button
-                onClick={() => toggleSection('avaliacaoFisica')}
-                className="w-full flex items-center justify-between p-4 font-bold text-green-800 hover:bg-green-100 transition-colors rounded-xl"
-              >
-                <h3>📏 Avaliação Física</h3>
-                <span className="text-2xl">{sectionsExpanded.avaliacaoFisica ? '−' : '+'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleSection('avaliacaoFisica')}
+                  className="flex-1 flex items-center justify-between p-4 font-bold text-green-800 hover:bg-green-100 transition-colors rounded-xl"
+                >
+                  <h3>📏 Avaliação Física</h3>
+                  <span className="text-2xl">{sectionsExpanded.avaliacaoFisica ? '−' : '+'}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditClientModal(true);
+                  }}
+                  className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                  title="Editar esta seção"
+                >
+                  ✏️ Editar
+                </button>
+              </div>
               
               {sectionsExpanded.avaliacaoFisica && (
                 <div className="p-4 border-t border-green-200">
@@ -171,13 +204,24 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
 
             {/* Avaliação Emocional */}
             <div className="border-2 border-purple-100 rounded-xl bg-purple-50">
-              <button
-                onClick={() => toggleSection('avaliacaoEmocional')}
-                className="w-full flex items-center justify-between p-4 font-bold text-purple-800 hover:bg-purple-100 transition-colors rounded-xl"
-              >
-                <h3>💚 Avaliação Emocional</h3>
-                <span className="text-2xl">{sectionsExpanded.avaliacaoEmocional ? '−' : '+'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleSection('avaliacaoEmocional')}
+                  className="flex-1 flex items-center justify-between p-4 font-bold text-purple-800 hover:bg-purple-100 transition-colors rounded-xl"
+                >
+                  <h3>💚 Avaliação Emocional</h3>
+                  <span className="text-2xl">{sectionsExpanded.avaliacaoEmocional ? '−' : '+'}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditClientModal(true);
+                  }}
+                  className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                  title="Editar esta seção"
+                >
+                  ✏️ Editar
+                </button>
+              </div>
               
               {sectionsExpanded.avaliacaoEmocional && (
                 <div className="p-4 border-t border-purple-200">
@@ -238,13 +282,24 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
 
             {/* Reavaliações */}
             <div className="border-2 border-indigo-100 rounded-xl bg-indigo-50">
-              <button
-                onClick={() => toggleSection('reavaliacoes')}
-                className="w-full flex items-center justify-between p-4 font-bold text-indigo-800 hover:bg-indigo-100 transition-colors rounded-xl"
-              >
-                <h3>🔄 Histórico de Reavaliações</h3>
-                <span className="text-2xl">{sectionsExpanded.reavaliacoes ? '−' : '+'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleSection('reavaliacoes')}
+                  className="flex-1 flex items-center justify-between p-4 font-bold text-indigo-800 hover:bg-indigo-100 transition-colors rounded-xl"
+                >
+                  <h3>🔄 Histórico de Reavaliações</h3>
+                  <span className="text-2xl">{sectionsExpanded.reavaliacoes ? '−' : '+'}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowEditClientModal(true);
+                  }}
+                  className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                  title="Editar esta seção"
+                >
+                  ✏️ Editar
+                </button>
+              </div>
               
               {sectionsExpanded.reavaliacoes && (
                 <div className="p-4 border-t border-indigo-200">
