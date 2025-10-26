@@ -1,19 +1,238 @@
 'use client';
 
+import { useState } from 'react';
+import { getAllClientes, ClienteComFormulario } from '@/data/mockClientes';
+
+interface Column {
+  id: string;
+  nome: string;
+  cor: string;
+  clientes: string[];
+}
+
 export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
+  const allClientes = getAllClientes();
+  
+  const [columns, setColumns] = useState<Column[]>([
+    { id: '1', nome: '✅ Ativo', cor: 'green', clientes: ['1', '2', '4', '5'] },
+    { id: '2', nome: '❌ Inativo', cor: 'red', clientes: [] },
+    { id: '3', nome: '⏸️ Pausado', cor: 'yellow', clientes: ['3'] },
+  ]);
+
+  const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [showAddColumnModal, setShowAddColumnModal] = useState(false);
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
+  const [newColumnData, setNewColumnData] = useState({ nome: '', cor: 'purple' });
+
+  const cores = [
+    { id: 'green', nome: 'Verde', classe: 'bg-green-100 border-green-300 text-green-800' },
+    { id: 'red', nome: 'Vermelho', classe: 'bg-red-100 border-red-300 text-red-800' },
+    { id: 'yellow', nome: 'Amarelo', classe: 'bg-yellow-100 border-yellow-300 text-yellow-800' },
+    { id: 'blue', nome: 'Azul', classe: 'bg-blue-100 border-blue-300 text-blue-800' },
+    { id: 'purple', nome: 'Roxo', classe: 'bg-purple-100 border-purple-300 text-purple-800' },
+    { id: 'pink', nome: 'Rosa', classe: 'bg-pink-100 border-pink-300 text-pink-800' },
+    { id: 'indigo', nome: 'Índigo', classe: 'bg-indigo-100 border-indigo-300 text-indigo-800' },
+    { id: 'gray', nome: 'Cinza', classe: 'bg-gray-100 border-gray-300 text-gray-800' },
+  ];
+
+  const handleDragStart = (clienteId: string) => {
+    setDraggedItem(clienteId);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (columnId: string) => {
+    if (!draggedItem) return;
+    const newColumns = columns.map(col => {
+      const clientesSemDragged = col.clientes.filter(id => id !== draggedItem);
+      if (col.id === columnId) {
+        return { ...col, clientes: [...clientesSemDragged, draggedItem] };
+      }
+      return { ...col, clientes: clientesSemDragged };
+    });
+    setColumns(newColumns);
+    setDraggedItem(null);
+  };
+
+  const adicionarColuna = () => {
+    if (!newColumnData.nome.trim()) return;
+    const novaColuna: Column = {
+      id: Date.now().toString(),
+      nome: newColumnData.nome,
+      cor: newColumnData.cor,
+      clientes: []
+    };
+    setColumns([...columns, novaColuna]);
+    setShowAddColumnModal(false);
+    setNewColumnData({ nome: '', cor: 'purple' });
+  };
+
+  const removerColuna = (columnId: string) => {
+    if (confirm('Tem certeza que deseja remover esta coluna?')) {
+      setColumns(columns.filter(col => col.id !== columnId));
+    }
+  };
+
+  const abrirDetalhesCliente = (clienteId: string) => {
+    const cliente = allClientes.find(c => c.id === clienteId);
+    if (cliente) {
+      setSelectedClient(cliente);
+      setShowClientModal(true);
+    }
+  };
+
+  const getClienteById = (id: string) => {
+    return allClientes.find(c => c.id === id);
+  };
+
+  const getCoresByColumn = (colorId: string) => {
+    return cores.find(c => c.id === colorId) || cores[7];
+  };
+
   return (
     <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
       <div className="bg-white shadow-md px-8 py-6 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-amber-700">📋 Trello/Kanban</h1>
-          <p className="text-gray-600 mt-1">Organize seus clientes</p>
+          <p className="text-gray-600 mt-1">Organize seus clientes em colunas</p>
+        </div>
+        <button
+          onClick={() => setShowAddColumnModal(true)}
+          className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 py-3 rounded-lg hover:scale-105 transition-all shadow-lg"
+        >
+          ➕ Nova Coluna
+        </button>
+      </div>
+
+      <div className="p-6 overflow-x-auto">
+        <div className="flex gap-6 min-w-max">
+          {columns.map((column) => {
+            const classeCor = getCoresByColumn(column.cor);
+            const clientesNaColuna = column.clientes.map(id => getClienteById(id)).filter(Boolean) as ClienteComFormulario[];
+
+            return (
+              <div
+                key={column.id}
+                className="w-80 flex-shrink-0"
+                onDragOver={handleDragOver}
+                onDrop={() => handleDrop(column.id)}
+              >
+                <div className={`${classeCor.classe} rounded-t-xl px-4 py-3 border-2 font-bold flex items-center justify-between mb-3`}>
+                  <span>{column.nome} ({clientesNaColuna.length})</span>
+                  <button
+                    onClick={() => removerColuna(column.id)}
+                    className="text-xs hover:bg-white/30 px-2 py-1 rounded"
+                  >
+                    🗑️
+                  </button>
+                </div>
+
+                <div className="bg-gray-100 rounded-b-xl p-3 min-h-[500px] space-y-3">
+                  {clientesNaColuna.map((cliente) => (
+                    <div
+                      key={cliente.id}
+                      draggable
+                      onDragStart={() => handleDragStart(cliente.id)}
+                      onClick={() => abrirDetalhesCliente(cliente.id)}
+                      className="bg-white rounded-lg p-4 shadow-md cursor-move hover:shadow-lg transition-all border-l-4 border-amber-500"
+                    >
+                      <div className="font-bold text-gray-800">{cliente.nome}</div>
+                      <div className="text-sm text-gray-600 mt-2">
+                        <p>📧 {cliente.email}</p>
+                        {cliente.formulario && (
+                          <p>⚖️ {cliente.formulario.peso_atual}kg → {cliente.formulario.peso_desejado}kg</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {clientesNaColuna.length === 0 && (
+                    <div className="text-center text-gray-400 py-8">
+                      <div className="text-4xl mb-2">📭</div>
+                      <p className="text-sm">Nenhum cliente</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-      
-      <div className="p-6">
-        <p className="text-gray-600">Kanban board será implementado aqui...</p>
-      </div>
+
+      {showAddColumnModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h2 className="text-2xl font-bold text-amber-700 mb-4">➕ Nova Coluna</h2>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Coluna</label>
+              <input
+                type="text"
+                value={newColumnData.nome}
+                onChange={(e) => setNewColumnData({...newColumnData, nome: e.target.value})}
+                placeholder="Ex: Primeira Consulta"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+              />
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3">Cor</label>
+              <div className="grid grid-cols-4 gap-3">
+                {cores.map(cor => (
+                  <button
+                    key={cor.id}
+                    onClick={() => setNewColumnData({...newColumnData, cor: cor.id})}
+                    className={`p-3 rounded-lg border-2 ${
+                      newColumnData.cor === cor.id ? 'border-amber-500 scale-110' : 'border-gray-200'
+                    } ${cor.classe}`}
+                  >
+                    {cor.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowAddColumnModal(false)}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={adicionarColuna}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:scale-105 shadow-lg"
+              >
+                Criar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showClientModal && selectedClient && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h2 className="text-2xl font-bold text-amber-700 mb-4">👤 {selectedClient.nome}</h2>
+            <div className="space-y-4">
+              <div><strong>Email:</strong> {selectedClient.email}</div>
+              <div><strong>WhatsApp:</strong> {selectedClient.whatsapp}</div>
+              {selectedClient.formulario && (
+                <>
+                  <div><strong>Peso Atual:</strong> {selectedClient.formulario.peso_atual}kg</div>
+                  <div><strong>Peso Desejado:</strong> {selectedClient.formulario.peso_desejado}kg</div>
+                </>
+              )}
+            </div>
+            <button
+              onClick={() => setShowClientModal(false)}
+              className="mt-6 w-full px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:scale-105 shadow-lg"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
