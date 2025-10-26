@@ -4,9 +4,16 @@ import { ClienteComFormulario } from './mockClientes';
 
 // Verifica se está conectado ao Supabase
 export function isSupabaseConnected(): boolean {
-  return typeof window !== 'undefined' && 
-         process.env.NEXT_PUBLIC_SUPABASE_URL !== '' && 
-         process.env.NEXT_PUBLIC_SUPABASE_URL !== 'https://xxxxx.supabase.co';
+  if (typeof window === 'undefined') return false;
+  
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  
+  // Verificar se as variáveis existem e são válidas
+  const isUrlValid = url && url !== '' && url !== 'https://xxxxx.supabase.co' && url.startsWith('https://');
+  const isKeyValid = key && key !== '' && key.startsWith('eyJ');
+  
+  return isUrlValid && isKeyValid;
 }
 
 // Função para obter todos os clientes (mock ou Supabase)
