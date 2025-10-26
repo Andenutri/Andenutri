@@ -18,17 +18,40 @@ class Cliente(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(200), unique=True, nullable=False)
+    
+    # Telefone internacional
+    pais_telefone = db.Column(db.String(10), default='+55')  # Código do país
     telefone = db.Column(db.String(20))
     whatsapp = db.Column(db.String(20))
     data_nascimento = db.Column(db.Date)
     foto = db.Column(db.String(500))  # URL da foto
     
+    # Endereço completo
+    pais = db.Column(db.String(100))
+    estado = db.Column(db.String(100))
+    cidade = db.Column(db.String(100))
+    endereco = db.Column(db.String(300))
+    
     # Status e plano
-    status = db.Column(db.String(20), default='inativo')  # ativo, inativo, pausado
+    status = db.Column(db.String(20), default='inativo')  # ativo, inativo, pausado, cancelado
     plano_ativo = db.Column(db.String(100))
+    status_plano = db.Column(db.String(20))  # ativo, inativo
     data_inicio = db.Column(db.Date)
     data_vencimento = db.Column(db.Date)
     tempo_acesso_ativo = db.Column(db.Boolean, default=True)  # True = acesso liberado
+    
+    # Herbalife
+    compra_herbalife = db.Column(db.String(20), default='nao')  # sim, nao
+    status_herbalife = db.Column(db.String(20))  # ativo, inativo, cancelado
+    usuario_herbalife = db.Column(db.String(100))
+    senha_herbalife = db.Column(db.String(200))  # Será criptografado
+    
+    # Indicação
+    foi_indicacao = db.Column(db.String(5), default='nao')  # sim, nao
+    indicado_por = db.Column(db.String(200))  # Nome da pessoa que indicou
+    
+    # Desafio
+    esta_desafio = db.Column(db.String(5), default='nao')  # sim, nao
     
     # Objetivos e observações
     objetivos = db.Column(db.Text)
@@ -49,12 +72,25 @@ class Cliente(db.Model):
             'id': self.id,
             'nome': self.nome,
             'email': self.email,
+            'pais_telefone': self.pais_telefone,
             'telefone': self.telefone,
             'whatsapp': self.whatsapp,
+            'pais': self.pais,
+            'estado': self.estado,
+            'cidade': self.cidade,
+            'endereco': self.endereco,
             'data_nascimento': self.data_nascimento.strftime('%Y-%m-%d') if self.data_nascimento else None,
             'foto': self.foto,
             'status': self.status,
             'plano_ativo': self.plano_ativo,
+            'status_plano': self.status_plano,
+            'compra_herbalife': self.compra_herbalife,
+            'status_herbalife': self.status_herbalife,
+            'usuario_herbalife': self.usuario_herbalife,
+            'senha_herbalife': self.senha_herbalife,  # Cuidado: não exibir em APIs públicas
+            'foi_indicacao': self.foi_indicacao,
+            'indicado_por': self.indicado_por,
+            'esta_desafio': self.esta_desafio,
             'data_inicio': self.data_inicio.strftime('%Y-%m-%d') if self.data_inicio else None,
             'data_vencimento': self.data_vencimento.strftime('%Y-%m-%d') if self.data_vencimento else None,
             'tempo_acesso_ativo': self.tempo_acesso_ativo,
