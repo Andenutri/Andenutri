@@ -16,10 +16,26 @@ export function isSupabaseConnected(): boolean {
   return isUrlValid && isKeyValid;
 }
 
-// Função para obter todos os clientes (mock ou Supabase)
+// Função para obter todos os clientes (mock, localStorage ou Supabase)
 export async function getAllClientes(): Promise<ClienteComFormulario[]> {
-  // Se não estiver conectado ao Supabase, retorna mock data
+  // Se não estiver conectado ao Supabase, busca do localStorage
   if (!isSupabaseConnected()) {
+    // Tentar buscar do localStorage
+    const clientesLocal = typeof window !== 'undefined' ? localStorage.getItem('clientes') : null;
+    
+    if (clientesLocal) {
+      try {
+        const clientesParsed = JSON.parse(clientesLocal);
+        // Mesclar com mock data para garantir que há dados
+        const { mockClientes } = await import('./mockClientes');
+        // Retorna clientes do localStorage primeiro, depois mock
+        return [...clientesParsed, ...mockClientes];
+      } catch (error) {
+        console.error('Erro ao parsear localStorage:', error);
+      }
+    }
+    
+    // Retorna apenas mock se não houver localStorage
     const { mockClientes } = await import('./mockClientes');
     return mockClientes;
   }
