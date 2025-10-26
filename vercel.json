@@ -1,13 +1,5 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/",
-      "destination": "/api/index.py"
-    }
-  ]
+  "buildCommand": "npm run build",
+  "framework": "nextjs"
 }
 
