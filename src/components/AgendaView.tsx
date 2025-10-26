@@ -616,6 +616,5 @@ export default function AgendaView({ sidebarOpen }: { sidebarOpen: boolean }) {
           </div>
         </div>
       )}
-    </div>
   );
 }
