@@ -23,6 +23,7 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [showAddColumnModal, setShowAddColumnModal] = useState(false);
   const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [showEditClientModal, setShowEditClientModal] = useState(false);
   const [showClientModal, setShowClientModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
   const [newColumnData, setNewColumnData] = useState({ nome: '', cor: 'purple' });
@@ -271,12 +272,23 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
                 </>
               )}
             </div>
-            <button
-              onClick={() => setShowClientModal(false)}
-              className="mt-6 w-full px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:scale-105 shadow-lg"
-            >
-              Fechar
-            </button>
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => {
+                  setShowClientModal(false);
+                  setShowEditClientModal(true);
+                }}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:scale-105 shadow-lg"
+              >
+                ✏️ Editar Cliente
+              </button>
+              <button
+                onClick={() => setShowClientModal(false)}
+                className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -286,6 +298,18 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
         isOpen={showAddClientModal}
         onClose={() => setShowAddClientModal(false)}
       />
+
+      {/* Modal Editar Cliente */}
+      {showEditClientModal && selectedClient && (
+        <AddClientModal
+          isOpen={showEditClientModal}
+          onClose={() => {
+            setShowEditClientModal(false);
+            setSelectedClient(null);
+          }}
+          clienteParaEditar={selectedClient}
+        />
+      )}
     </div>
   );
 }
