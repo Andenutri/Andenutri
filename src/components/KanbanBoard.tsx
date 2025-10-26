@@ -149,12 +149,49 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
                       onClick={() => abrirDetalhesCliente(cliente.id)}
                       className="bg-white rounded-lg p-4 shadow-md cursor-move hover:shadow-lg transition-all border-l-4 border-amber-500"
                     >
-                      <div className="font-bold text-gray-800">{cliente.nome}</div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        <p>📧 {cliente.email}</p>
+                      {/* Nome e Status */}
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="font-bold text-gray-800">{cliente.nome}</div>
+                        <div className="flex gap-1 flex-wrap">
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            cliente.status_plano === 'ativo' ? 'bg-green-100 text-green-700' :
+                            cliente.status_plano === 'inativo' ? 'bg-red-100 text-red-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }`}>
+                            {cliente.status_plano === 'ativo' ? '🟢' : cliente.status_plano === 'inativo' ? '🔴' : '🟡'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Informações Principais */}
+                      <div className="text-xs text-gray-600 space-y-1 mt-2">
                         {cliente.formulario && (
-                          <p>⚖️ {cliente.formulario.peso_atual}kg → {cliente.formulario.peso_desejado}kg</p>
+                          <>
+                            <div className="flex items-center gap-1">
+                              <span>📊 Meta:</span>
+                              <span className="font-semibold">{cliente.formulario.peso_desejado}kg</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <span>⚖️ Atual:</span>
+                              <span className="font-semibold">{cliente.formulario.peso_atual}kg</span>
+                            </div>
+                          </>
                         )}
+                        <div className="flex items-center gap-1 text-blue-600">
+                          <span>📅 Próxima consulta:</span>
+                          <span className="font-semibold">20/02/2025</span>
+                        </div>
+                      </div>
+                      
+                      {/* Divider */}
+                      <div className="border-t my-2"></div>
+                      
+                      {/* Observações Personalizadas */}
+                      <div className="text-xs text-gray-500 mt-2">
+                        <div className="font-semibold text-gray-700 mb-1">📝 Observações:</div>
+                        <div className="max-h-20 overflow-y-auto text-xs">
+                          Protocolo: Mudança gradual{cliente.formulario_preenchido && ' • Formulário preenchido'}
+                        </div>
                       </div>
                     </div>
                   ))}
