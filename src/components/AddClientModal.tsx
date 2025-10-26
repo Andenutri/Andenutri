@@ -11,22 +11,34 @@ interface AddClientModalProps {
 
 export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: AddClientModalProps) {
   const [formData, setFormData] = useState({
+    // Informações Básicas
     nome: '',
     email: '',
     telefone: '',
     whatsapp: '',
     instagram: '',
     pais_telefone: '+55',
+    
+    // Endereço
     endereco_completo: '',
     pais: 'Brasil',
     estado: '',
     cidade: '',
+    
+    // Status
     status_programa: 'ativo',
     status_herbalife: 'inativo',
     status_challenge: 'nao',
+    
+    // Herbalife
     herbalife_usuario: '',
     herbalife_senha: '',
+    
+    // Indicação
     indicado_por: '',
+    
+    // Dados da Pré-Consulta (se disponível)
+    formulario: null as any,
   });
 
   useEffect(() => {
@@ -42,19 +54,20 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
         pais: 'Brasil',
         estado: '',
         cidade: '',
-        status_programa: clienteParaEditar.status_plano === 'ativo' ? 'ativo' : 'inativo',
+        status_programa: clienteParaEditar.status_plano === 'ativo' ? 'ativo' : clienteParaEditar.status_plano === 'inativo' ? 'inativo' : 'pausado',
         status_herbalife: 'inativo',
         status_challenge: 'nao',
         herbalife_usuario: '',
         herbalife_senha: '',
         indicado_por: '',
+        formulario: clienteParaEditar.formulario || null,
       });
     }
   }, [clienteParaEditar]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Cliente cadastrado com sucesso!');
+    alert(clienteParaEditar ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!');
     onClose();
   };
 
@@ -62,7 +75,7 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl max-w-4xl w-full max-h-[95vh] overflow-y-auto my-8">
+      <div className="bg-white rounded-xl max-w-5xl w-full max-h-[95vh] overflow-y-auto my-8">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
           <h2 className="text-2xl font-bold text-amber-700">
             {clienteParaEditar ? '✏️ Editar Cliente' : '➕ Adicionar Novo Cliente'}
@@ -100,7 +113,7 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
                 />
               </div>
-              <div>
+              <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Telefone</label>
                 <div className="flex gap-2">
                   <select 
@@ -276,6 +289,22 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
             </div>
           </div>
 
+          {/* Informação de Pré-Consulta */}
+          {clienteParaEditar?.formulario && (
+            <div className="border-2 border-indigo-200 rounded-xl p-6 bg-indigo-50">
+              <h3 className="text-lg font-bold text-indigo-700 mb-4">📋 Dados da Pré-Consulta Existentes</h3>
+              <div className="text-sm text-gray-600 space-y-2">
+                <p><strong>Peso Atual:</strong> {clienteParaEditar.formulario.peso_atual} kg</p>
+                <p><strong>Peso Desejado:</strong> {clienteParaEditar.formulario.peso_desejado} kg</p>
+                {clienteParaEditar.formulario.idade && <p><strong>Idade:</strong> {clienteParaEditar.formulario.idade} anos</p>}
+                {clienteParaEditar.formulario.altura && <p><strong>Altura:</strong> {clienteParaEditar.formulario.altura} cm</p>}
+              </div>
+              <p className="text-xs text-indigo-600 mt-3">
+                💡 Os dados completos da pré-consulta estão salvos e podem ser acessados através do botão "Editar Cliente" no modal de detalhes.
+              </p>
+            </div>
+          )}
+
           {/* Botões */}
           <div className="flex gap-4 pt-4 border-t">
             <button
@@ -297,4 +326,3 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar }: A
     </div>
   );
 }
-
