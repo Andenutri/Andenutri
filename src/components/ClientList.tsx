@@ -1,9 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { getAllClientes } from '@/data/mockClientes';
+import AddClientModal from './AddClientModal';
 
 export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
   const clientes = getAllClientes();
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
 
   return (
     <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
@@ -12,7 +15,10 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
           <h1 className="text-3xl font-bold text-amber-700">👥 Clientes</h1>
           <p className="text-gray-600 mt-1">Gestão completa de clientes</p>
         </div>
-        <button className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 py-3 rounded-lg hover:scale-105 transition-all shadow-lg">
+        <button 
+          onClick={() => setShowAddClientModal(true)}
+          className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 py-3 rounded-lg hover:scale-105 transition-all shadow-lg"
+        >
           ➕ Adicionar Cliente
         </button>
       </div>
@@ -38,6 +44,12 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
           ))}
         </div>
       </div>
+
+      {/* Modal Adicionar Cliente */}
+      <AddClientModal
+        isOpen={showAddClientModal}
+        onClose={() => setShowAddClientModal(false)}
+      />
     </div>
   );
 }

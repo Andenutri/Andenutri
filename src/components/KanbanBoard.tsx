@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { getAllClientes, ClienteComFormulario } from '@/data/mockClientes';
+import AddClientModal from './AddClientModal';
 
 interface Column {
   id: string;
@@ -21,6 +22,7 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
 
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [showAddColumnModal, setShowAddColumnModal] = useState(false);
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [showClientModal, setShowClientModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
   const [newColumnData, setNewColumnData] = useState({ nome: '', cor: 'purple' });
@@ -99,12 +101,20 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
           <h1 className="text-3xl font-bold text-amber-700">📋 Trello/Kanban</h1>
           <p className="text-gray-600 mt-1">Organize seus clientes em colunas</p>
         </div>
-        <button
-          onClick={() => setShowAddColumnModal(true)}
-          className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 py-3 rounded-lg hover:scale-105 transition-all shadow-lg"
-        >
-          ➕ Nova Coluna
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => setShowAddColumnModal(true)}
+            className="bg-amber-50 text-amber-700 px-6 py-3 rounded-lg hover:bg-amber-100 transition-colors border-2 border-amber-200 font-semibold"
+          >
+            ➕ Nova Coluna
+          </button>
+          <button
+            onClick={() => setShowAddClientModal(true)}
+            className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 py-3 rounded-lg hover:scale-105 transition-all shadow-lg font-semibold"
+          >
+            👤 Adicionar Cliente
+          </button>
+        </div>
       </div>
 
       <div className="p-6 overflow-x-auto">
@@ -233,6 +243,12 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
           </div>
         </div>
       )}
+
+      {/* Modal Adicionar Cliente */}
+      <AddClientModal
+        isOpen={showAddClientModal}
+        onClose={() => setShowAddClientModal(false)}
+      />
     </div>
   );
 }
