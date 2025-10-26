@@ -87,6 +87,10 @@ CREATE TABLE avaliacoes_fisicas (
   data_avaliacao DATE NOT NULL,
   peso DECIMAL(5,2),
   altura DECIMAL(5,2),
+  massa_gorda DECIMAL(5,2),
+  massa_magra DECIMAL(5,2),
+  visceral DECIMAL(5,2),
+  busto DECIMAL(5,2),
   braco_esquerdo DECIMAL(5,2),
   braco_direito DECIMAL(5,2),
   peito DECIMAL(5,2),
@@ -95,10 +99,12 @@ CREATE TABLE avaliacoes_fisicas (
   quadril DECIMAL(5,2),
   coxa_esquerda DECIMAL(5,2),
   coxa_direita DECIMAL(5,2),
+  pescoco DECIMAL(5,2),
   foto_frente_url TEXT,
   foto_perfil_url TEXT,
   foto_costas_url TEXT,
   observacoes TEXT,
+  protocolo_aplicado TEXT,
   tipo_avaliacao TEXT DEFAULT 'inicial' CHECK (tipo_avaliacao IN ('inicial', 'reavaliacao', 'final')),
   data_criacao TIMESTAMP DEFAULT NOW()
 );

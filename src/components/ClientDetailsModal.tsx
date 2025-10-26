@@ -5,6 +5,7 @@ import { ClienteComFormulario } from '@/data/mockClientes';
 import AddClientModal from './AddClientModal';
 import ReavaliacaoModal from './ReavaliacaoModal';
 import PlalhaEvolucaoModal from './PlalhaEvolucaoModal';
+import EditarInformacoesBasicasModal from './EditarInformacoesBasicasModal';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
   const [showEditClientModal, setShowEditClientModal] = useState(false);
   const [showReavaliacaoModal, setShowReavaliacaoModal] = useState(false);
   const [showPlalhaEvolucaoModal, setShowPlalhaEvolucaoModal] = useState(false);
+  const [showEditarBasicasModal, setShowEditarBasicasModal] = useState(false);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [sectionToEdit, setSectionToEdit] = useState<string | null>(null);
 
@@ -63,7 +65,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                   <span className="text-2xl">{sectionsExpanded.basicas ? '−' : '+'}</span>
                 </button>
                 <button
-                  onClick={() => setEditingSection('basicas')}
+                  onClick={() => setShowEditarBasicasModal(true)}
                   className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
                   title="Editar esta seção"
                 >
@@ -438,6 +440,22 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
           }}
           clienteId={cliente?.id || ''}
           clienteNome={cliente?.nome || ''}
+        />
+      )}
+
+      {/* Modal de Editar Informações Básicas */}
+      {showEditarBasicasModal && (
+        <EditarInformacoesBasicasModal
+          isOpen={showEditarBasicasModal}
+          onClose={() => {
+            setShowEditarBasicasModal(false);
+            // Recarregar dados do cliente após edição
+            if (cliente?.id) {
+              // TODO: Recarregar dados do Supabase/localStorage
+              window.location.reload();
+            }
+          }}
+          cliente={cliente}
         />
       )}
     </>
