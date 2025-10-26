@@ -153,6 +153,11 @@ ALTER TABLE materiais ENABLE ROW LEVEL SECURITY;
 ALTER TABLE assinaturas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comunicados ENABLE ROW LEVEL SECURITY;
 
+-- Remover políticas antigas se existirem
+DROP POLICY IF EXISTS "Usuários podem ver apenas próprio perfil" ON usuarios;
+DROP POLICY IF EXISTS "Materiais filtrados por tenant" ON materiais;
+DROP POLICY IF EXISTS "Comunicados filtrados por tenant" ON comunicados;
+
 -- Política RLS para USUARIOS (cada coach vê apenas sua própria conta)
 CREATE POLICY "Usuários podem ver apenas próprio perfil" ON usuarios
   FOR SELECT USING (auth.uid() = id);
