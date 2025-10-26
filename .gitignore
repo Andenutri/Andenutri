@@ -1,29 +1,51 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-venv/
-env/
-ENV/
-*.egg-info/
-dist/
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Next.js
+.next/
+out/
 build/
+dist/
 
-# Flask
-instance/
-.webassets-cache
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-andenutri.db
+# Vercel
+.vercel
 
 # Environment variables
 .env
 .env.local
+.env.*.local
+
+# Database
+*.db
+instance/
+database/
+.sqlite
+
+# Uploads
+uploads/
+storage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
 
 # IDE
 .vscode/
@@ -32,23 +54,18 @@ andenutri.db
 *.swo
 *~
 
-# Uploads
-uploads/
-*.jpg
-*.jpeg
-*.png
-*.gif
+# Python (legacy)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+venv/
+ENV/
+env/
 
-# Logs
-*.log
-logs/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Temporary files
-*.tmp
-*.bak
-node_modules/
-.next/
+# Flask (legacy)
+instance/
+.webassets-cache
+.flask_session/
