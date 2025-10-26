@@ -213,7 +213,7 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status no Programa</label>
                 <select
                   value={formData.status_programa}
-                  onChange={(e) => setFormData({ ...formData, status_programa: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, status_programa: e.target.value as 'ativo' | 'inativo' | 'pausado' })}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none"
                 >
                   <option value="ativo">✅ Ativo</option>
@@ -226,7 +226,7 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status Herbalife</label>
                 <select
                   value={formData.status_herbalife}
-                  onChange={(e) => setFormData({ ...formData, status_herbalife: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, status_herbalife: e.target.value as 'nao_pertence' | 'ativo' | 'inativo' })}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none"
                 >
                   <option value="nao_pertence">❌ Não pertence</option>
