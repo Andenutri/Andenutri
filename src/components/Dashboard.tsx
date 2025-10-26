@@ -49,7 +49,7 @@ export default function Dashboard({ sidebarOpen }: { sidebarOpen: boolean }) {
             </div>
             <div className="bg-amber-50 p-6 rounded-lg hover:scale-105 transition-transform cursor-pointer">
               <div className="text-5xl mb-4">📋</div>
-              <h3 className="font-bold text-amber-700">Trello/Kanban</h3>
+              <h3 className="font-bold text-amber-700">Trello</h3>
               <p className="text-sm text-gray-600">Visualização</p>
             </div>
             <div className="bg-amber-50 p-6 rounded-lg hover:scale-105 transition-transform cursor-pointer">
