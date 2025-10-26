@@ -6,8 +6,12 @@ import { getAllClientes, getClientesParaAvaliar, ClienteComFormulario } from '@/
 
 interface Avaliacao {
   id: string;
+  cliente_id: string;
   cliente_nome: string;
   data_avaliacao: string;
+  historia_pessoa?: string;
+  bloco_emocional?: any;
+  bloco_comportamental?: any;
 }
 
 export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }) {
