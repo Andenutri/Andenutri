@@ -11,6 +11,8 @@ interface Evento {
   cliente: string;
   tipo: 'consulta' | 'reavaliacao' | 'follow-up' | 'outro';
   cor: string;
+  lembrete?: string; // tempo antes do evento (5min, 15min, 1h, 1 dia)
+  notificado?: boolean;
 }
 
 export default function AgendaPage() {
@@ -18,6 +20,9 @@ export default function AgendaPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Evento | null>(null);
+  const [filtroTipo, setFiltroTipo] = useState<string>('todos');
+  const [filtroCliente, setFiltroCliente] = useState<string>('');
+  const [draggedEvent, setDraggedEvent] = useState<Evento | null>(null);
   
   const [eventos, setEventos] = useState<Evento[]>([
     {
@@ -49,6 +54,7 @@ export default function AgendaPage() {
     hora: '',
     cliente: '',
     tipo: 'consulta' as const,
+    lembrete: '',
   });
 
   const coresEventos = {
@@ -73,23 +79,63 @@ export default function AgendaPage() {
   };
 
   const getEventsForDate = (date: Date) => {
-    return eventos.filter(evento => {
+    let eventosFiltrados = eventos.filter(evento => {
       const eventDate = new Date(evento.data);
       return eventDate.getDate() === date.getDate() &&
              eventDate.getMonth() === date.getMonth() &&
              eventDate.getFullYear() === date.getFullYear();
     });
+
+    // Aplicar filtros
+    if (filtroTipo !== 'todos') {
+      eventosFiltrados = eventosFiltrados.filter(ev => ev.tipo === filtroTipo);
+    }
+    if (filtroCliente) {
+      eventosFiltrados = eventosFiltrados.filter(ev => 
+        ev.cliente.toLowerCase().includes(filtroCliente.toLowerCase())
+      );
+    }
+
+    return eventosFiltrados;
+  };
+
+  // Drag & Drop handlers
+  const handleDragStart = (evento: Evento) => {
+    setDraggedEvent(evento);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (date: Date) => {
+    if (draggedEvent) {
+      const newDate = new Date(date);
+      const horaParts = draggedEvent.hora.split(':');
+      newDate.setHours(parseInt(horaParts[0]), parseInt(horaParts[1]));
+      
+      setEventos(eventos.map(ev => 
+        ev.id === draggedEvent.id ? { ...ev, data: newDate } : ev
+      ));
+      setDraggedEvent(null);
+    }
   };
 
   const handleAddEvent = () => {
     const novoEvento: Evento = {
       id: Date.now().toString(),
-      ...formData,
+      titulo: formData.titulo,
+      descricao: formData.descricao,
       data: new Date(formData.data),
+      hora: formData.hora,
+      cliente: formData.cliente,
+      tipo: formData.tipo,
+      cor: formData.tipo,
+      lembrete: formData.lembrete || undefined,
     };
     setEventos([...eventos, novoEvento]);
     setShowModal(false);
-    setFormData({ titulo: '', descricao: '', data: '', hora: '', cliente: '', tipo: 'consulta' });
+    setFormData({ titulo: '', descricao: '', data: '', hora: '', cliente: '', tipo: 'consulta', lembrete: '' });
   };
 
   const handleEditEvent = (evento: Evento) => {
@@ -100,6 +146,7 @@ export default function AgendaPage() {
       hora: evento.hora,
       cliente: evento.cliente,
       tipo: evento.tipo,
+      lembrete: evento.lembrete || '',
     });
     setEditingEvent(evento);
     setShowModal(true);
@@ -107,10 +154,21 @@ export default function AgendaPage() {
 
   const handleUpdateEvent = () => {
     if (!editingEvent) return;
-    setEventos(eventos.map(ev => ev.id === editingEvent.id ? { ...ev, ...formData, data: new Date(formData.data) } : ev));
+    setEventos(eventos.map(ev => 
+      ev.id === editingEvent.id ? { 
+        ...ev, 
+        titulo: formData.titulo,
+        descricao: formData.descricao,
+        data: new Date(formData.data),
+        hora: formData.hora,
+        cliente: formData.cliente,
+        tipo: formData.tipo,
+        lembrete: formData.lembrete || undefined
+      } : ev
+    ));
     setShowModal(false);
     setEditingEvent(null);
-    setFormData({ titulo: '', descricao: '', data: '', hora: '', cliente: '', tipo: 'consulta' });
+    setFormData({ titulo: '', descricao: '', data: '', hora: '', cliente: '', tipo: 'consulta', lembrete: '' });
   };
 
   const handleDeleteEvent = (id: string) => {
@@ -154,6 +212,49 @@ export default function AgendaPage() {
       {/* Controles de visualização */}
       <div className="px-4 md:px-8 py-4">
         <div className="bg-white rounded-xl shadow-md p-4 md:p-6">
+          {/* Filtros */}
+          <div className="mb-4 pb-4 border-b border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">🔍 Filtrar por Cliente</label>
+                <input
+                  type="text"
+                  value={filtroCliente}
+                  onChange={(e) => setFiltroCliente(e.target.value)}
+                  placeholder="Digite o nome do cliente..."
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none text-sm md:text-base"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">📋 Filtrar por Tipo</label>
+                <select
+                  value={filtroTipo}
+                  onChange={(e) => setFiltroTipo(e.target.value)}
+                  className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none text-sm md:text-base"
+                >
+                  <option value="todos">Todos</option>
+                  <option value="consulta">📋 Consulta</option>
+                  <option value="reavaliacao">📏 Reavaliação</option>
+                  <option value="follow-up">💊 Follow-up</option>
+                  <option value="outro">📝 Outro</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                {(filtroTipo !== 'todos' || filtroCliente) && (
+                  <button
+                    onClick={() => {
+                      setFiltroTipo('todos');
+                      setFiltroCliente('');
+                    }}
+                    className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors text-sm md:text-base"
+                  >
+                    🗑️ Limpar Filtros
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
             <div className="flex gap-2">
               <button
@@ -219,12 +320,14 @@ export default function AgendaPage() {
                 const eventsForDay = getEventsForDate(date);
                 const isToday = date.toDateString() === new Date().toDateString();
                 
-                return (
+                  return (
                   <div
                     key={day}
                     className={`p-2 md:p-4 min-h-[60px] md:min-h-[100px] bg-white border-2 rounded-lg ${
                       isToday ? 'border-amber-500 bg-amber-50' : 'border-gray-200'
                     }`}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDrop(date)}
                   >
                     <div className={`text-sm md:text-base font-bold mb-1 ${isToday ? 'text-amber-700' : 'text-gray-800'}`}>
                       {day}
@@ -233,7 +336,9 @@ export default function AgendaPage() {
                       {eventsForDay.slice(0, 2).map((evento) => (
                         <div
                           key={evento.id}
-                          className={`text-xs p-1 rounded truncate ${coresEventos[evento.tipo]}`}
+                          draggable
+                          onDragStart={() => handleDragStart(evento)}
+                          className={`text-xs p-1 rounded truncate ${coresEventos[evento.tipo]} cursor-move hover:opacity-80`}
                         >
                           {evento.hora} - {evento.titulo}
                         </div>
@@ -265,6 +370,8 @@ export default function AgendaPage() {
                     className={`p-3 md:p-4 border-2 rounded-lg ${
                       isToday ? 'border-amber-500 bg-amber-50' : 'border-gray-200 bg-white'
                     }`}
+                    onDragOver={handleDragOver}
+                    onDrop={() => handleDrop(date)}
                   >
                     <div className="font-bold text-sm md:text-base mb-2">
                       {date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -273,15 +380,17 @@ export default function AgendaPage() {
                       <div className="text-gray-400 text-sm">Nenhum evento</div>
                     ) : (
                       <div className="space-y-2">
-                        {eventsForDay.map((evento) => (
-                          <div
-                            key={evento.id}
-                            className={`p-2 rounded ${coresEventos[evento.tipo]}`}
-                          >
-                            <div className="font-semibold">{evento.hora} - {evento.titulo}</div>
-                            <div className="text-sm">{evento.descricao}</div>
-                          </div>
-                        ))}
+                      {eventsForDay.map((evento) => (
+                        <div
+                          key={evento.id}
+                          draggable
+                          onDragStart={() => handleDragStart(evento)}
+                          className={`p-2 rounded ${coresEventos[evento.tipo]} cursor-move hover:opacity-80`}
+                        >
+                          <div className="font-semibold">{evento.hora} - {evento.titulo}</div>
+                          <div className="text-sm">{evento.descricao}</div>
+                        </div>
+                      ))}
                       </div>
                     )}
                   </div>
@@ -405,6 +514,22 @@ export default function AgendaPage() {
                   <option value="reavaliacao">📏 Reavaliação</option>
                   <option value="follow-up">💊 Follow-up</option>
                   <option value="outro">📝 Outro</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">🔔 Lembrete</label>
+                <select
+                  value={formData.lembrete}
+                  onChange={(e) => setFormData({...formData, lembrete: e.target.value})}
+                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                >
+                  <option value="">Nenhum lembrete</option>
+                  <option value="5min">5 minutos antes</option>
+                  <option value="15min">15 minutos antes</option>
+                  <option value="30min">30 minutos antes</option>
+                  <option value="1h">1 hora antes</option>
+                  <option value="2h">2 horas antes</option>
+                  <option value="1dia">1 dia antes</option>
                 </select>
               </div>
             </div>
