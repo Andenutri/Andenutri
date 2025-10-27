@@ -294,7 +294,7 @@ export default function AgendaPage() {
             <button
               onClick={() => {
                 setEditingEvent(null);
-                setFormData({ titulo: '', descricao: '', data: '', hora: '', cliente: '', tipo: 'consulta' });
+                setFormData({ titulo: '', descricao: '', data: '', hora: '', cliente: '', tipo: 'consulta', lembrete: '' });
                 setShowModal(true);
               }}
               className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base"
