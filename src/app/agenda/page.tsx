@@ -135,13 +135,21 @@ export default function AgendaPage() {
     },
   ]);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    titulo: string;
+    descricao: string;
+    data: string;
+    hora: string;
+    cliente: string;
+    tipo: 'consulta' | 'reavaliacao' | 'follow-up' | 'outro';
+    lembrete: string;
+  }>({
     titulo: '',
     descricao: '',
     data: '',
     hora: '',
     cliente: '',
-    tipo: 'consulta' as const,
+    tipo: 'consulta',
     lembrete: '',
   });
 
