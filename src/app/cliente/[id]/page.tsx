@@ -68,9 +68,9 @@ export default function ClientePage({ params }: { params: { id: string } }) {
                   </div>
                   <div className="text-center p-4 bg-purple-50 rounded-lg">
                     <div className="text-2xl md:text-3xl font-bold text-purple-700">
-                      {cliente.formulario.peso_atual - cliente.formulario.peso_desejado < 0 
+                      {Number(cliente.formulario.peso_atual) - Number(cliente.formulario.peso_desejado) < 0 
                         ? 'Meta atingida! 🎉' 
-                        : `${Math.abs(cliente.formulario.peso_atual - cliente.formulario.peso_desejado)}kg`}
+                        : `${Math.abs(Number(cliente.formulario.peso_atual) - Number(cliente.formulario.peso_desejado))}kg`}
                     </div>
                     <div className="text-xs md:text-sm text-gray-600 mt-1">Diferença</div>
                   </div>
