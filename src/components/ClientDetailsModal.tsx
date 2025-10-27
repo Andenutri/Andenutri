@@ -9,6 +9,7 @@ import EditarInformacoesBasicasModal from './EditarInformacoesBasicasModal';
 import EditarPreConsultaModal from './EditarPreConsultaModal';
 import EditarAvaliacaoFisicaModal from './EditarAvaliacaoFisicaModal';
 import EditarAvaliacaoEmocionalModal from './EditarAvaliacaoEmocionalModal';
+import AvaliacaoFisicaEditavel from './AvaliacaoFisicaEditavel';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -48,9 +49,9 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
   return (
     <>
       <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
-            <h2 className="text-2xl font-bold text-amber-700">Detalhes do Cliente</h2>
+        <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] md:max-h-[95vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 flex justify-between items-center z-10">
+            <h2 className="text-xl md:text-2xl font-bold text-amber-700">Detalhes do Cliente</h2>
             <button
               onClick={onClose}
               className="text-3xl text-gray-400 hover:text-gray-600"
@@ -59,7 +60,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
             </button>
           </div>
 
-          <div className="p-6 space-y-4">
+          <div className="p-4 md:p-6 space-y-4">
             {/* Informações Básicas */}
             <div className="border-2 border-amber-100 rounded-xl bg-amber-50">
               <div className="flex items-center gap-2">
@@ -147,67 +148,9 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               </div>
             )}
 
-            {/* Avaliação Física */}
-            <div className="border-2 border-green-100 rounded-xl bg-green-50">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => toggleSection('avaliacaoFisica')}
-                  className="flex-1 flex items-center justify-between p-4 font-bold text-green-800 hover:bg-green-100 transition-colors rounded-xl"
-                >
-                  <h3>📏 Avaliação Física</h3>
-                  <span className="text-2xl">{sectionsExpanded.avaliacaoFisica ? '−' : '+'}</span>
-                </button>
-                <button
-                  onClick={() => setShowEditarAvaliacaoFisicaModal(true)}
-                  className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
-                  title="Editar esta seção"
-                >
-                  ✏️ Editar
-                </button>
-              </div>
-              
-              {sectionsExpanded.avaliacaoFisica && (
-                <div className="p-4 border-t border-green-200">
-                  {/* Dados Mock - Avaliação Física */}
-                  <div className="space-y-4">
-                    <div className="bg-white rounded-lg p-4 border border-green-200">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-green-700">📏 Avaliação Inicial - 15/01/2025</h4>
-                        <span className="text-xs text-gray-500">Inicial</span>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">Peso:</span>
-                          <p className="font-bold text-green-700">75kg</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">IMC:</span>
-                          <p className="font-bold text-green-700">26.2</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Cintura:</span>
-                          <p className="font-bold text-green-700">88cm</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Quadril:</span>
-                          <p className="font-bold text-green-700">102cm</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Braço:</span>
-                          <p className="font-bold text-green-700">32cm</p>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">Coxa:</span>
-                          <p className="font-bold text-green-700">58cm</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 pt-3 border-t">
-                        <span className="text-xs text-gray-500">📸 4 fotos anexadas</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+            {/* Avaliação Física Editável */}
+            <div className="border-2 border-green-100 rounded-xl overflow-hidden">
+              <AvaliacaoFisicaEditavel cliente={cliente} />
             </div>
 
             {/* Avaliação Emocional */}
@@ -373,13 +316,13 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
             </div>
 
             {/* Ações */}
-            <div className="flex gap-4 pt-4 border-t">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4 border-t">
               <button
                 onClick={() => {
                   onClose();
                   setShowPlalhaEvolucaoModal(true);
                 }}
-                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg"
+                className="w-full sm:w-auto px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base"
               >
                 📊 Planilha de Evolução
               </button>
@@ -388,13 +331,13 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                   onClose();
                   setShowEditClientModal(true);
                 }}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg"
+                className="w-full sm:flex-1 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base"
               >
                 ✏️ Editar Cliente
               </button>
               <button
                 onClick={onClose}
-                className="px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="w-full sm:w-auto px-4 md:px-6 py-2 md:py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm md:text-base"
               >
                 Fechar
               </button>

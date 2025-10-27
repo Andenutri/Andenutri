@@ -13,21 +13,23 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200 relative">
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-5 left-5 z-50 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-5 py-3 rounded-xl text-xl shadow-lg hover:scale-105 transition-all"
+        className="fixed top-4 left-4 z-50 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2 md:px-5 md:py-3 rounded-lg md:rounded-xl text-lg md:text-xl shadow-lg hover:scale-105 transition-all"
       >
         ☰
       </button>
       
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} setView={setView} />
       
-      {view === 'dashboard' && <Dashboard sidebarOpen={sidebarOpen} setView={setView} />}
-      {view === 'clientes' && <ClientList sidebarOpen={sidebarOpen} />}
-      {view === 'trello' && <TrelloView sidebarOpen={sidebarOpen} />}
-            {/* {view === 'agenda' && <AgendaView sidebarOpen={sidebarOpen} />} */}
-      {view === 'avaliacoes' && <AvaliacoesView sidebarOpen={sidebarOpen} />}
+      <div className="pt-16 md:pt-20">
+        {view === 'dashboard' && <Dashboard sidebarOpen={sidebarOpen} setView={setView} />}
+        {view === 'clientes' && <ClientList sidebarOpen={sidebarOpen} />}
+        {view === 'trello' && <TrelloView sidebarOpen={sidebarOpen} />}
+        {/* {view === 'agenda' && <AgendaView sidebarOpen={sidebarOpen} />} */}
+        {view === 'avaliacoes' && <AvaliacoesView sidebarOpen={sidebarOpen} />}
+      </div>
     </div>
   );
 }

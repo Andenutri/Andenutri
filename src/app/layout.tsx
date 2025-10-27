@@ -39,7 +39,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="ANDENUTRI" />
       </head>
-      <body className="h-full overflow-auto">{children}</body>
+      <body className="min-h-screen overflow-y-auto overflow-x-hidden">{children}</body>
     </html>
   );
 }
