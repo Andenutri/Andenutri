@@ -8,13 +8,13 @@ interface SidebarProps {
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen, setView }: SidebarProps) {
   const menuItems = [
-    { icon: '📊', label: 'Dashboard', view: 'dashboard' },
-    { icon: '👥', label: 'Clientes', view: 'clientes' },
-    { icon: '📋', label: 'Trello/Kanban', view: 'trello' },
-    { icon: '📅', label: 'Agenda', view: 'agenda' },
-    { icon: '📏', label: 'Avaliações', view: 'avaliacoes' },
-    { icon: '🥗', label: 'Cardápios', view: 'cardapios' },
-    { icon: '⚙️', label: 'Configurações', view: 'configuracoes' },
+    { icon: '📊', label: 'Dashboard', view: 'dashboard', link: '/' },
+    { icon: '👥', label: 'Clientes', view: 'clientes', link: '/' },
+    { icon: '📋', label: 'Trello/Kanban', view: 'trello', link: '/' },
+    { icon: '📅', label: 'Agenda', view: 'agenda', link: '/agenda' },
+    { icon: '📏', label: 'Avaliações', view: 'avaliacoes', link: '/' },
+    { icon: '🥗', label: 'Cardápios', view: 'cardapios', link: '/' },
+    { icon: '⚙️', label: 'Configurações', view: 'configuracoes', link: '/' },
   ];
 
   return (
@@ -31,17 +31,22 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen, setView }: Sideba
       }`}>
         <div className="space-y-1 p-4">
           {menuItems.map((item, idx) => (
-            <div
+            <a
               key={idx}
+              href={item.link || '#'}
               onClick={() => {
-                setView(item.view);
-                setSidebarOpen(false);
+                if (item.link && item.link !== '/') {
+                  setSidebarOpen(false);
+                } else {
+                  setView(item.view);
+                  setSidebarOpen(false);
+                }
               }}
-              className="px-6 py-5 cursor-pointer border-b border-gray-100 transition-colors flex items-center gap-3 hover:bg-amber-50"
+              className="block px-6 py-5 cursor-pointer border-b border-gray-100 transition-colors flex items-center gap-3 hover:bg-amber-50"
             >
               <span className="text-2xl">{item.icon}</span>
               <span className="font-medium">{item.label}</span>
-            </div>
+            </a>
           ))}
         </div>
       </div>

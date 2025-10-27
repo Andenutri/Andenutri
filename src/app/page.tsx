@@ -6,7 +6,6 @@ import Dashboard from '@/components/Dashboard';
 import ClientList from '@/components/ClientList';
 import TrelloView from '@/components/TrelloView';
 import AvaliacoesView from '@/components/AvaliacoesView';
-// import AgendaView from '@/components/AgendaView';
 
 export default function Home() {
   const [view, setView] = useState('dashboard');
