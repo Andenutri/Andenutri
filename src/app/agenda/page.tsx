@@ -355,9 +355,9 @@ export default function AgendaPage() {
             </div>
           )}
 
-          {/* Lista de Eventos */}
+          {/* Lista de Eventos - Visualização Trello (Semana) */}
           {view === 'week' && (
-            <div className="space-y-2">
+            <div className="flex flex-col lg:flex-row gap-3 md:gap-4 overflow-x-auto pb-2">
               {Array.from({ length: 7 }).map((_, index) => {
                 const date = new Date(selectedDate);
                 date.setDate(selectedDate.getDate() - selectedDate.getDay() + index);
@@ -367,32 +367,53 @@ export default function AgendaPage() {
                 return (
                   <div
                     key={index}
-                    className={`p-3 md:p-4 border-2 rounded-lg ${
-                      isToday ? 'border-amber-500 bg-amber-50' : 'border-gray-200 bg-white'
-                    }`}
+                    className="flex-shrink-0 w-full lg:w-72"
                     onDragOver={handleDragOver}
                     onDrop={() => handleDrop(date)}
                   >
-                    <div className="font-bold text-sm md:text-base mb-2">
-                      {date.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </div>
-                    {eventsForDay.length === 0 ? (
-                      <div className="text-gray-400 text-sm">Nenhum evento</div>
-                    ) : (
-                      <div className="space-y-2">
-                      {eventsForDay.map((evento) => (
-                        <div
-                          key={evento.id}
-                          draggable
-                          onDragStart={() => handleDragStart(evento)}
-                          className={`p-2 rounded ${coresEventos[evento.tipo]} cursor-move hover:opacity-80`}
-                        >
-                          <div className="font-semibold">{evento.hora} - {evento.titulo}</div>
-                          <div className="text-sm">{evento.descricao}</div>
-                        </div>
-                      ))}
+                    {/* Header da Coluna */}
+                    <div className={`p-3 md:p-4 border-2 rounded-t-lg mb-2 ${
+                      isToday ? 'border-amber-500 bg-gradient-to-r from-amber-400 to-amber-500' : 'border-gray-300 bg-gradient-to-r from-blue-400 to-blue-500'
+                    }`}>
+                      <div className="font-bold text-white text-center">
+                        <div className="text-xs md:text-sm uppercase">{date.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
+                        <div className="text-lg md:text-xl">{date.getDate()}</div>
+                        <div className="text-xs md:text-sm">{date.toLocaleDateString('pt-BR', { month: 'short' })}</div>
                       </div>
-                    )}
+                    </div>
+                    
+                    {/* Eventos */}
+                    <div className={`min-h-[300px] md:min-h-[500px] max-h-[70vh] overflow-y-auto p-2 space-y-2 border-2 rounded-b-lg ${
+                      isToday ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-gray-50'
+                    }`}>
+                      {eventsForDay.length === 0 ? (
+                        <div className="text-center py-8 text-gray-400 text-sm">
+                          <div className="text-4xl mb-2">📭</div>
+                          <p>Nenhum evento</p>
+                        </div>
+                      ) : (
+                        eventsForDay.map((evento) => (
+                          <div
+                            key={evento.id}
+                            draggable
+                            onDragStart={() => handleDragStart(evento)}
+                            className={`p-3 rounded-lg shadow-sm ${coresEventos[evento.tipo]} cursor-move hover:shadow-md transition-all border-l-4`}
+                          >
+                            <div className="font-bold text-sm mb-1">⏰ {evento.hora}</div>
+                            <div className="font-semibold text-base mb-1">{evento.titulo}</div>
+                            {evento.descricao && (
+                              <div className="text-sm opacity-75 mb-1">{evento.descricao}</div>
+                            )}
+                            <div className="text-xs font-medium opacity-60">👤 {evento.cliente}</div>
+                            {evento.lembrete && (
+                              <div className="text-xs mt-1 bg-white/50 px-2 py-1 rounded inline-block">
+                                🔔 {evento.lembrete}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 );
               })}
