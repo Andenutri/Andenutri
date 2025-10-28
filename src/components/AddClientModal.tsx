@@ -23,6 +23,9 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
     instagram: '',
     pais_telefone: '+55',
     
+    // Perfil/Anotações
+    perfil: '',
+    
     // Endereço
     endereco_completo: '',
     pais: 'Brasil',
@@ -59,6 +62,7 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
         telefone: clienteParaEditar.telefone || '',
         whatsapp: clienteParaEditar.whatsapp || '',
         instagram: clienteParaEditar.instagram || '',
+        perfil: (clienteParaEditar as any).perfil || '',
         pais_telefone: '+55',
         endereco_completo: clienteParaEditar.formulario?.endereco_completo || '',
         pais: 'Brasil',
@@ -182,6 +186,17 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
                   placeholder="@usuario"
                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
                 />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">👤 Perfil/Anotações</label>
+                <textarea 
+                  value={formData.perfil}
+                  onChange={(e) => setFormData({...formData, perfil: e.target.value})}
+                  placeholder="Digite informações importantes sobre esta pessoa para te lembrar (ex: interesses, personalidade, observações, etc.)"
+                  rows={3}
+                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">📝 Use este campo para anotações pessoais sobre o cliente</p>
               </div>
             </div>
           </div>

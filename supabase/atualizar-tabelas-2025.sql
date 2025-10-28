@@ -98,12 +98,27 @@ END $$;
 ALTER TABLE eventos_agenda DISABLE ROW LEVEL SECURITY;
 
 -- ================================================
--- 4. COMANDOS DE CONFIRMAÇÃO
+-- 4. ADICIONAR CAMPO PERFIL NA TABELA CLIENTES
+-- ================================================
+DO $$ 
+BEGIN
+    -- Adicionar perfil se não existir
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'clientes' AND column_name = 'perfil'
+    ) THEN
+        ALTER TABLE clientes ADD COLUMN perfil TEXT;
+    END IF;
+END $$;
+
+-- ================================================
+-- 5. COMANDOS DE CONFIRMAÇÃO
 -- ================================================
 DO $$ 
 BEGIN
     RAISE NOTICE '✅ Tabela de eventos_agenda criada com sucesso!';
     RAISE NOTICE '✅ Novos campos adicionados à avaliacoes_fisicas!';
+    RAISE NOTICE '✅ Campo perfil adicionado à tabela clientes!';
     RAISE NOTICE '✅ Sistema de agenda pronto para uso!';
 END $$;
 
