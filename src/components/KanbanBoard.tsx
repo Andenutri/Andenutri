@@ -4,14 +4,7 @@ import { useState, useEffect } from 'react';
 import { getAllClientes, ClienteComFormulario } from '@/data/mockClientes';
 import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
-import { syncAllColumns } from '@/data/kanbanData';
-
-interface Column {
-  id: string;
-  nome: string;
-  cor: string;
-  clientes: string[];
-}
+import { syncAllColumns, Column } from '@/data/kanbanData';
 
 export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
   const allClientes = getAllClientes();

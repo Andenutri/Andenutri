@@ -1,6 +1,11 @@
 // Gerenciamento de colunas Kanban com Supabase
 
-import { Column } from '../components/KanbanBoard';
+export interface Column {
+  id: string;
+  nome: string;
+  cor: string;
+  clientes: string[];
+}
 
 interface KanbanColumn {
   id: string;
