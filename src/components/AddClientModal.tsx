@@ -90,6 +90,7 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
         herbalife_senha: '',
         indicado_por: (clienteParaEditar as any).indicado_por || '',
         is_lead: (clienteParaEditar as any).is_lead || false,
+        column_id: '',
         formulario: clienteParaEditar.formulario || null,
       });
     }
