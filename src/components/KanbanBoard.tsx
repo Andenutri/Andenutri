@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getAllClientes, ClienteComFormulario } from '@/data/mockClientes';
 import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
+import { syncAllColumns } from '@/data/kanbanData';
 
 interface Column {
   id: string;
@@ -28,6 +29,21 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [showClientModal, setShowClientModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
   const [newColumnData, setNewColumnData] = useState({ nome: '', cor: 'purple' });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedColumnForClient, setSelectedColumnForClient] = useState<string | null>(null);
+
+  // Sincronizar colunas com Supabase quando mudarem
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      try {
+        await syncAllColumns(columns);
+      } catch (error) {
+        console.error('Erro ao sincronizar colunas:', error);
+      }
+    }, 1000); // Debounce de 1 segundo
+
+    return () => clearTimeout(timer);
+  }, [columns]);
 
   const cores = [
     { id: 'green', nome: 'Verde', classe: 'bg-green-100 border-green-300 text-green-800' },
@@ -120,21 +136,61 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
             </button>
           </div>
         </div>
+
+        {/* Barra de Busca */}
+        <div className="mt-4 px-4 md:px-8">
+          <div className="bg-white rounded-lg border-2 border-amber-200 p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="🔍 Buscar por nome, status, lead, herbalife..."
+                  className="w-full px-4 py-2 md:py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none text-sm md:text-base"
+                />
+              </div>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="px-4 py-2 md:py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-semibold text-sm md:text-base whitespace-nowrap"
+                >
+                  🗑️ Limpar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Board Mobile-First */}
       <div className="p-4 md:p-6">
-        {/* Mobile: Stack verticalmente, Desktop: Horizontal scroll */}
-        <div className="flex flex-col lg:flex-row lg:gap-6 lg:overflow-x-auto lg:overflow-y-visible pb-4">
-          <div className="flex lg:contents flex-col lg:flex-row gap-4 lg:gap-6">
+        {/* Mobile e Desktop: Horizontal scroll (como Kanban/Trello) */}
+        <div className="flex flex-row gap-4 md:gap-6 overflow-x-auto overflow-y-visible pb-4">
+          <div className="flex gap-4 md:gap-6">
             {columns.map((column) => {
               const classeCor = getCoresByColumn(column.cor);
-              const clientesNaColuna = column.clientes.map(id => getClienteById(id)).filter(Boolean) as ClienteComFormulario[];
+              let clientesNaColuna = column.clientes.map(id => getClienteById(id)).filter(Boolean) as ClienteComFormulario[];
+              
+              // Filtrar por busca
+              if (searchQuery) {
+                const query = searchQuery.toLowerCase().trim();
+                clientesNaColuna = clientesNaColuna.filter(cliente => {
+                  const nomeMatch = cliente.nome.toLowerCase().includes(query);
+                  const statusMatch = cliente.status_plano?.toLowerCase().includes(query);
+                  const emailMatch = cliente.email?.toLowerCase().includes(query);
+                  const leadMatch = query.includes('lead') && (cliente as any).is_lead;
+                  const herbalifeMatch = query.includes('herbalife') && (cliente as any).status_herbalife;
+                  const indicacaoMatch = (cliente as any).indicado_por?.toLowerCase().includes(query);
+                  
+                  return nomeMatch || statusMatch || emailMatch || leadMatch || herbalifeMatch || indicacaoMatch;
+                });
+              }
 
               return (
                 <div
                   key={column.id}
-                  className="w-full lg:w-80 lg:flex-shrink-0"
+                  className="w-72 flex-shrink-0"
                   onDragOver={handleDragOver}
                   onDrop={() => handleDrop(column.id)}
                 >
@@ -148,6 +204,20 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
                     </button>
                   </div>
 
+                  {/* Botão Adicionar Cliente - Sempre Visível no Topo */}
+                  <div className="bg-gray-50 border-b-2 border-gray-200 px-3 py-2">
+                    <button
+                      onClick={() => {
+                        setSelectedColumnForClient(column.id);
+                        setShowAddClientModal(true);
+                      }}
+                      className="w-full px-3 py-2 bg-amber-50 text-amber-700 rounded-lg hover:bg-amber-100 transition-colors border border-amber-200 text-xs font-semibold flex items-center justify-center gap-2"
+                    >
+                      <span>➕</span>
+                      <span>Adicionar Cliente</span>
+                    </button>
+                  </div>
+
                   <div className="bg-gray-100 rounded-b-xl p-3 min-h-[200px] lg:min-h-[500px] lg:max-h-[calc(100vh-250px)] overflow-y-auto space-y-3" style={{ maxHeight: '60vh' }}>
                     {clientesNaColuna.map((cliente) => (
                       <div
@@ -157,17 +227,38 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
                         onClick={() => abrirDetalhesCliente(cliente.id)}
                         className="bg-white rounded-lg p-3 md:p-4 shadow-md cursor-move hover:shadow-lg transition-all border-l-4 border-amber-500"
                       >
-                        {/* Nome e Status */}
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="font-bold text-gray-800 text-sm md:text-base">{cliente.nome}</div>
-                          <div className="flex gap-1 flex-wrap">
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              cliente.status_plano === 'ativo' ? 'bg-green-100 text-green-700' :
-                              cliente.status_plano === 'inativo' ? 'bg-red-100 text-red-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>
-                              {cliente.status_plano === 'ativo' ? '🟢' : cliente.status_plano === 'inativo' ? '🔴' : '🟡'}
-                            </span>
+                        {/* Nome e Bolinhas de Status */}
+                        <div className="mb-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="font-bold text-gray-800 text-sm md:text-base">{cliente.nome}</div>
+                          </div>
+                          {/* Bolinhas de Identificação */}
+                          <div className="flex gap-2 items-center flex-wrap">
+                            {/* Status do Programa */}
+                            <div className="flex items-center gap-1">
+                              <div className={`w-3 h-3 rounded-full ${
+                                cliente.status_plano === 'ativo' ? 'bg-green-500' :
+                                cliente.status_plano === 'inativo' ? 'bg-red-500' :
+                                'bg-yellow-500'
+                              }`} title={cliente.status_plano}></div>
+                              <span className="text-xs text-gray-600">Programa</span>
+                            </div>
+                            {/* Status Herbalife */}
+                            {(cliente as any).status_herbalife && (
+                              <div className="flex items-center gap-1">
+                                <div className={`w-3 h-3 rounded-full ${
+                                  (cliente as any).status_herbalife === 'ativo' ? 'bg-blue-500' : 'bg-gray-400'
+                                }`} title={(cliente as any).status_herbalife}></div>
+                                <span className="text-xs text-gray-600">Herbalife</span>
+                              </div>
+                            )}
+                            {/* Status Lead */}
+                            {(cliente as any).is_lead && (
+                              <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 rounded-full bg-purple-500" title="Lead"></div>
+                                <span className="text-xs text-gray-600">Lead</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                         
@@ -205,9 +296,9 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
                     ))}
                     
                     {clientesNaColuna.length === 0 && (
-                      <div className="text-center text-gray-400 py-8">
+                      <div className="text-center py-8">
                         <div className="text-4xl mb-2">📭</div>
-                        <p className="text-sm">Nenhum cliente</p>
+                        <p className="text-sm text-gray-400">Nenhum cliente nesta coluna</p>
                       </div>
                     )}
                   </div>
@@ -278,11 +369,15 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
         />
       )}
 
-      {/* Modal Adicionar Cliente */}
-      <AddClientModal
-        isOpen={showAddClientModal}
-        onClose={() => setShowAddClientModal(false)}
-      />
+        {/* Modal Adicionar Cliente */}
+        <AddClientModal
+          isOpen={showAddClientModal}
+          onClose={() => {
+            setShowAddClientModal(false);
+            setSelectedColumnForClient(null);
+          }}
+          defaultColumn={selectedColumnForClient}
+        />
     </div>
   );
 }

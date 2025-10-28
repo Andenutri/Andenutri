@@ -98,7 +98,7 @@ END $$;
 ALTER TABLE eventos_agenda DISABLE ROW LEVEL SECURITY;
 
 -- ================================================
--- 4. ADICIONAR CAMPO PERFIL NA TABELA CLIENTES
+-- 4. ADICIONAR CAMPOS PERFIL, IS_LEAD E INDICADO_POR NA TABELA CLIENTES
 -- ================================================
 DO $$ 
 BEGIN
@@ -109,6 +109,16 @@ BEGIN
     ) THEN
         ALTER TABLE clientes ADD COLUMN perfil TEXT;
     END IF;
+
+    -- Adicionar is_lead se não existir
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'clientes' AND column_name = 'is_lead'
+    ) THEN
+        ALTER TABLE clientes ADD COLUMN is_lead BOOLEAN DEFAULT FALSE;
+    END IF;
+
+    -- Indicado_por já existe na tabela original, então não precisa adicionar
 END $$;
 
 -- ================================================
@@ -118,7 +128,7 @@ DO $$
 BEGIN
     RAISE NOTICE '✅ Tabela de eventos_agenda criada com sucesso!';
     RAISE NOTICE '✅ Novos campos adicionados à avaliacoes_fisicas!';
-    RAISE NOTICE '✅ Campo perfil adicionado à tabela clientes!';
-    RAISE NOTICE '✅ Sistema de agenda pronto para uso!';
+    RAISE NOTICE '✅ Campos perfil, is_lead adicionados à tabela clientes!';
+    RAISE NOTICE '✅ Sistema de agenda, lead e indicação pronto para uso!';
 END $$;
 

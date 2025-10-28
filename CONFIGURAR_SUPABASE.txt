@@ -1,77 +1,170 @@
-====================================================
-COMO CONFIGURAR O SUPABASE PARA SALVAR DADOS
-====================================================
+╔══════════════════════════════════════════════════════════════╗
+║       🚀 CONFIGURAÇÃO SUPABASE - ANDENUTRI                   ║
+║            Sistema de Cadastros Reais                        ║
+╚══════════════════════════════════════════════════════════════╝
 
-⚠️ PROBLEMA ATUAL:
-Os dados estão sendo salvos apenas em memória (mockData).
-Para salvar permanentemente, você precisa configurar o Supabase.
+📋 O QUE JÁ ESTÁ PRONTO:
+✅ Estrutura de tabelas (SQL scripts)
+✅ Integração com Supabase no código
+✅ Sistema de fallback (localStorage + Supabase)
+✅ Campos: nome, email, telefone, whatsapp, instagram
+✅ Campos: Lead, Indicação, Perfil/Anotações
+✅ Status: Programa, Herbalife, Challenge
+✅ Avaliações Físicas completas
+✅ Agenda de eventos
+✅ Trello/Kanban com colunas personalizáveis
 
-====================================================
-PASSO A PASSO:
-====================================================
+═══════════════════════════════════════════════════════════════
 
-1. CRIAR PROJETO NO SUPABASE:
-   - Acesse: https://supabase.com/dashboard
-   - Faça login ou crie uma conta
-   - Clique em "New Project"
-   - Nome: Andenutri
-   - Database Password: (escolha uma senha)
-   - Region: South America
-   - Clique em "Create new project"
+🔧 PASSO 1: CRIAR/CONFIGURAR PROJETO NO SUPABASE
+═══════════════════════════════════════════════════════════════
 
-2. EXECUTAR O SCHEMA SQL:
-   - No Dashboard, vá em "SQL Editor"
-   - Clique em "New Query"
-   - Abra o arquivo: supabase/schema.sql
-   - Copie TODO o conteúdo
-   - Cole no SQL Editor
-   - Clique em "Run"
+1. Acesse: https://app.supabase.com
+2. Crie uma conta (se ainda não tiver)
+3. Clique em "New Project"
+4. Escolha:
+   - Name: andenutri
+   - Database Password: (anote essa senha!)
+   - Region: escolha a mais próxima
+   - Pricing Plan: Free (para começar)
+5. Aguarde a criação do projeto (2-3 minutos)
 
-3. OBTER CREDENCIAIS:
-   - Vá em "Project Settings" (ícone de engrenagem)
-   - Clique em "API"
-   - Copie:
-     * Project URL
-     * anon key
+═══════════════════════════════════════════════════════════════
 
-4. CRIAR ARQUIVO .env.local:
-   Crie um arquivo chamado .env.local na raiz do projeto:
+🔧 PASSO 2: OBTER AS CREDENCIAIS
+═══════════════════════════════════════════════════════════════
+
+1. No seu projeto Supabase, clique em "Settings" (⚙️)
+2. Clique em "API"
+3. Você verá:
+   - Project URL: https://xxxxx.supabase.co
+   - API Keys > anon public: eyJhbGci...
+
+═══════════════════════════════════════════════════════════════
+
+🔧 PASSO 3: CONFIGURAR O .ENV.LOCAL
+═══════════════════════════════════════════════════════════════
+
+1. Na raiz do projeto, copie o arquivo de exemplo:
+   → cp .env.local.example .env.local
+
+2. Abra o arquivo .env.local e preencha:
    
    NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon-aqui
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-chave-anon-key-aqui
 
-5. REINICIAR O SERVIDOR:
-   - Pare o servidor (Ctrl+C)
-   - Execute: npm run dev
-   - Acesse: localhost:3000
+3. Salve o arquivo
 
-====================================================
-RESULTADO:
-====================================================
+═══════════════════════════════════════════════════════════════
 
-✅ Agora os dados serão salvos permanentemente no Supabase
-✅ Você poderá salvar qualquer cliente (incluindo "Regina"!)
-✅ Os dados persistirão mesmo após fechar o navegador
+🔧 PASSO 4: APLICAR AS TABELAS NO SUPABASE
+═══════════════════════════════════════════════════════════════
 
-====================================================
-VERIFICAÇÃO:
-====================================================
+1. No Supabase, clique em "SQL Editor" (ícone de terminal)
+2. Clique em "+ New Query"
+3. Escolha um dos scripts abaixo e cole no editor:
 
-1. Acesse: localhost:3000
-2. Vá em "Clientes"
-3. Clique em "Adicionar Cliente"
-4. Digite apenas o nome "Regina"
-5. Clique em "Cadastrar Cliente"
-6. Se o Supabase estiver configurado: "Cliente salvo com sucesso!"
-7. Se não estiver: Alerta explicando que precisa configurar
+   📄 Opção A - Schema Completo (RECOMENDADO):
+   → Abrir: supabase/schema.sql
+   → Copiar todo o conteúdo
+   → Colar no SQL Editor do Supabase
+   → Clicar em "Run" (ou Ctrl+Enter)
 
-====================================================
-ARQUIVOS IMPORTANTES:
-====================================================
+   📄 Opção B - Atualização Incremental:
+   → Abrir: supabase/atualizar-tabelas-2025.sql
+   → Copiar todo o conteúdo
+   → Colar no SQL Editor do Supabase
+   → Clicar em "Run"
 
-- supabase/schema.sql (Script SQL para criar tabelas)
-- docs/COMO_CONFIGURAR_SUPABASE.md (Guia detalhado)
-- docs/SUPABASE_ESTRUTURA.md (Estrutura das tabelas)
+4. Verifique se apareceu "Success!" ✅
 
-====================================================
+═══════════════════════════════════════════════════════════════
 
+🔧 PASSO 5: VERIFICAR TABELAS CRIADAS
+═══════════════════════════════════════════════════════════════
+
+1. No Supabase, clique em "Table Editor" (ícone de tabela)
+2. Você deve ver as tabelas:
+   ✓ clientes
+   ✓ formularios_pre_consulta
+   ✓ avaliacoes_fisicas
+   ✓ avaliacoes_emocionais
+   ✓ avaliacoes_comportamentais
+   ✓ cardapios
+   ✓ kanban_colunas
+   ✓ planos_assinatura
+   ✓ consultas
+   ✓ reavaliacoes
+   ✓ eventos_agenda
+
+═══════════════════════════════════════════════════════════════
+
+🔧 PASSO 6: REINICIAR O SERVIDOR
+═══════════════════════════════════════════════════════════════
+
+1. Pare o servidor (Ctrl+C no terminal)
+2. Inicie novamente: npm run dev
+3. O sistema agora está sincronizado com Supabase! 🎉
+
+═══════════════════════════════════════════════════════════════
+
+✅ TESTAR INTEGRAÇÃO
+═══════════════════════════════════════════════════════════════
+
+1. Acesse: http://localhost:3000
+2. Vá em "Dashboard" > "Adicionar Cliente"
+3. Preencha os dados e clique em "Cadastrar"
+4. Você verá uma mensagem: "✅ Cliente salvo com sucesso no Supabase!"
+5. Verifique no Supabase Table Editor se o cliente foi criado
+
+═══════════════════════════════════════════════════════════════
+
+📊 TABELAS CRIADAS
+═══════════════════════════════════════════════════════════════
+
+Cada tabela tem:
+✓ ID único (UUID)
+✓ Datas de criação/atualização
+✓ Relacionamentos entre tabelas
+✓ Validação de dados
+✓ Índices para performance
+
+═══════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANTE
+═══════════════════════════════════════════════════════════════
+
+1. Nunca compartilhe sua ANON KEY publicamente
+2. Mantenha o .env.local seguro
+3. Faça backups regularmente do banco de dados
+4. Use variáveis de ambiente em produção (Vercel, etc)
+
+═══════════════════════════════════════════════════════════════
+
+🆘 PROBLEMAS COMUNS
+═══════════════════════════════════════════════════════════════
+
+❌ Erro: "Supabase not configured"
+   → Verifique se o .env.local existe e está correto
+   → Reinicie o servidor: npm run dev
+
+❌ Erro: "Failed to fetch"
+   → Verifique se a URL do Supabase está correta
+   → Verifique sua conexão com internet
+
+❌ Erro: "Table does not exist"
+   → Execute os scripts SQL novamente no Supabase
+   → Verifique no Table Editor se as tabelas existem
+
+═══════════════════════════════════════════════════════════════
+
+📞 SUPORTE
+═══════════════════════════════════════════════════════════════
+
+Documentação Supabase: https://supabase.com/docs
+Dashboard Supabase: https://app.supabase.com
+
+═══════════════════════════════════════════════════════════════
+
+Pronto! Você já pode fazer cadastros reais que ficam salvos
+permanentemente no Supabase! 🎉✨

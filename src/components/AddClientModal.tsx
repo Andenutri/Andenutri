@@ -9,10 +9,12 @@ interface AddClientModalProps {
   onClose: () => void;
   clienteParaEditar?: ClienteComFormulario | null;
   defaultSection?: string | null;
+  defaultColumn?: string | null;
 }
 
-export default function AddClientModal({ isOpen, onClose, clienteParaEditar, defaultSection }: AddClientModalProps) {
+export default function AddClientModal({ isOpen, onClose, clienteParaEditar, defaultSection, defaultColumn }: AddClientModalProps) {
   const [activeSection, setActiveSection] = useState<string | null>(null);
+  const [columnId, setColumnId] = useState<string | null>(defaultColumn || null);
   
   const [formData, setFormData] = useState({
     // Informações Básicas
@@ -25,6 +27,12 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
     
     // Perfil/Anotações
     perfil: '',
+    
+    // Lead & Indicação
+    is_lead: false,
+    
+    // Kanban/Trello
+    column_id: '',
     
     // Endereço
     endereco_completo: '',
@@ -55,6 +63,13 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
   }, [defaultSection]);
 
   useEffect(() => {
+    if (defaultColumn) {
+      setColumnId(defaultColumn);
+      setFormData(prev => ({ ...prev, column_id: defaultColumn }));
+    }
+  }, [defaultColumn]);
+
+  useEffect(() => {
     if (clienteParaEditar) {
       setFormData({
         nome: clienteParaEditar.nome || '',
@@ -73,7 +88,8 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
         status_challenge: 'nao',
         herbalife_usuario: '',
         herbalife_senha: '',
-        indicado_por: '',
+        indicado_por: (clienteParaEditar as any).indicado_por || '',
+        is_lead: (clienteParaEditar as any).is_lead || false,
         formulario: clienteParaEditar.formulario || null,
       });
     }
@@ -201,6 +217,35 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
             </div>
           </div>
 
+          {/* Lead e Indicação */}
+          <div className="border-2 border-pink-200 rounded-xl p-6 bg-pink-50">
+            <h3 className="text-lg font-bold text-pink-700 mb-4">📊 Lead & Indicação</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <input 
+                    type="checkbox"
+                    checked={formData.is_lead || false}
+                    onChange={(e) => setFormData({...formData, is_lead: e.target.checked})}
+                    className="w-5 h-5 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+                  />
+                  🎯 Este contato é um LEAD (para remarketing e seguimento)
+                </label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">👥 Indicado Por</label>
+                <input 
+                  type="text"
+                  value={formData.indicado_por}
+                  onChange={(e) => setFormData({...formData, indicado_por: e.target.value})}
+                  placeholder="Nome da pessoa que indicou (ex: Marcilene)"
+                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-pink-500 focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">💡 Use para controle de indicações e remarketing</p>
+              </div>
+            </div>
+          </div>
+
           {/* Endereço */}
           <div className="border-2 border-blue-200 rounded-xl p-6 bg-blue-50">
             <h3 className="text-lg font-bold text-blue-700 mb-4">📍 Endereço Completo</h3>
@@ -250,6 +295,36 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
           {/* Status do Programa */}
           <div className="border-2 border-purple-200 rounded-xl p-6 bg-purple-50">
             <h3 className="text-lg font-bold text-purple-700 mb-4">🏷️ Status do Programa</h3>
+            
+            {/* Preview das Bolinhas */}
+            <div className="mb-4 p-3 bg-white rounded-lg border-2 border-purple-200">
+              <div className="text-xs font-semibold text-gray-600 mb-2">🔴 Preview das Bolinhas:</div>
+              <div className="flex gap-3 items-center flex-wrap">
+                <div className="flex items-center gap-2">
+                  <div className={`w-4 h-4 rounded-full ${
+                    formData.status_programa === 'ativo' ? 'bg-green-500' :
+                    formData.status_programa === 'inativo' ? 'bg-red-500' :
+                    'bg-yellow-500'
+                  }`}></div>
+                  <span className="text-sm font-semibold">Programa: {formData.status_programa}</span>
+                </div>
+                {formData.status_herbalife && (
+                  <div className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-full ${
+                      formData.status_herbalife === 'ativo' ? 'bg-blue-500' : 'bg-gray-400'
+                    }`}></div>
+                    <span className="text-sm font-semibold">Herbalife: {formData.status_herbalife}</span>
+                  </div>
+                )}
+                {formData.is_lead && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-purple-500"></div>
+                    <span className="text-sm font-semibold text-purple-700">Lead</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
             <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Programa</label>
@@ -270,8 +345,8 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
                   onChange={(e) => setFormData({...formData, status_herbalife: e.target.value})}
                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
                 >
-                  <option value="ativo">🟢 Ativo</option>
-                  <option value="inativo">🔴 Inativo</option>
+                  <option value="ativo">🔵 Ativo (Azul)</option>
+                  <option value="inativo">⚪ Inativo (Cinza)</option>
                 </select>
               </div>
               <div>
@@ -287,6 +362,32 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
               </div>
             </div>
           </div>
+
+          {/* Coluna do Trello */}
+          {!clienteParaEditar && (
+            <div className="border-2 border-amber-200 rounded-xl p-6 bg-amber-50">
+              <h3 className="text-lg font-bold text-amber-700 mb-4">📋 Coluna no Trello</h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Escolher Coluna</label>
+                <select
+                  value={formData.column_id}
+                  onChange={(e) => {
+                    setFormData({...formData, column_id: e.target.value});
+                    setColumnId(e.target.value);
+                  }}
+                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                >
+                  <option value="">Selecione uma coluna...</option>
+                  <option value="1">✅ Ativo</option>
+                  <option value="2">❌ Inativo</option>
+                  <option value="3">⏸️ Pausado</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 Esta coluna aparecerá no Trello/Kanban
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Herbalife */}
           {formData.status_herbalife === 'ativo' && (
@@ -314,21 +415,6 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
               </div>
             </div>
           )}
-
-          {/* Indicado Por */}
-          <div className="border-2 border-pink-200 rounded-xl p-6 bg-pink-50">
-            <h3 className="text-lg font-bold text-pink-700 mb-4">👥 Indicação</h3>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Indicado Por</label>
-              <input 
-                type="text"
-                value={formData.indicado_por}
-                onChange={(e) => setFormData({...formData, indicado_por: e.target.value})}
-                placeholder="Nome da pessoa que indicou"
-                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-pink-500 focus:outline-none"
-              />
-            </div>
-          </div>
 
           {/* Informação de Pré-Consulta */}
           {clienteParaEditar?.formulario && (

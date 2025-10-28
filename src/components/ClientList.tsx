@@ -31,19 +31,39 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
               href={`/cliente/${cliente.id}`}
               className="block bg-white rounded-xl shadow-lg p-4 md:p-6 hover:scale-105 transition-transform cursor-pointer border-l-4 border-amber-500"
             >
-              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">{cliente.nome}</h3>
+              <div className="mb-2">
+                <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-1">{cliente.nome}</h3>
+                {/* Bolinhas de Status */}
+                <div className="flex gap-3 items-center flex-wrap">
+                  <div className="flex items-center gap-1">
+                    <div className={`w-2.5 h-2.5 rounded-full ${
+                      cliente.status_plano === 'ativo' ? 'bg-green-500' :
+                      cliente.status_plano === 'inativo' ? 'bg-red-500' :
+                      'bg-yellow-500'
+                    }`}></div>
+                    <span className="text-xs text-gray-600">Programa</span>
+                  </div>
+                  {(cliente as any).status_herbalife && (
+                    <div className="flex items-center gap-1">
+                      <div className={`w-2.5 h-2.5 rounded-full ${
+                        (cliente as any).status_herbalife === 'ativo' ? 'bg-blue-500' : 'bg-gray-400'
+                      }`}></div>
+                      <span className="text-xs text-gray-600">Herbalife</span>
+                    </div>
+                  )}
+                  {(cliente as any).is_lead && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+                      <span className="text-xs text-gray-600">Lead</span>
+                    </div>
+                  )}
+                </div>
+              </div>
               <p className="text-xs md:text-sm text-gray-600 mb-1">📧 {cliente.email}</p>
               <p className="text-xs md:text-sm text-gray-600 mb-1">📱 {cliente.whatsapp}</p>
               {cliente.formulario && (
                 <p className="text-xs md:text-sm text-gray-600 mb-1">⚖️ {cliente.formulario.peso_atual}kg → {cliente.formulario.peso_desejado}kg</p>
               )}
-              <span className={`inline-block mt-3 text-xs px-3 py-1 rounded-full ${
-                cliente.status_plano === 'ativo' ? 'bg-green-100 text-green-700' :
-                cliente.status_plano === 'inativo' ? 'bg-red-100 text-red-700' :
-                'bg-yellow-100 text-yellow-700'
-              }`}>
-                {cliente.status_plano}
-              </span>
             </a>
           ))}
         </div>

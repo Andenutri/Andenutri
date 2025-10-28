@@ -82,6 +82,38 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               
               {sectionsExpanded.basicas && (
                 <div className="p-4 border-t border-amber-200">
+                  {/* Bolinhas de Status */}
+                  <div className="mb-4 p-3 bg-white rounded-lg border-2 border-gray-200">
+                    <div className="text-xs font-semibold text-gray-600 mb-2">🔴 Status de Identificação</div>
+                    <div className="flex gap-4 items-center flex-wrap">
+                      {/* Status do Programa */}
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full ${
+                          cliente.status_plano === 'ativo' ? 'bg-green-500' :
+                          cliente.status_plano === 'inativo' ? 'bg-red-500' :
+                          'bg-yellow-500'
+                        }`}></div>
+                        <span className="text-sm font-semibold">Programa: {cliente.status_plano}</span>
+                      </div>
+                      {/* Status Herbalife */}
+                      {(cliente as any).status_herbalife && (
+                        <div className="flex items-center gap-2">
+                          <div className={`w-4 h-4 rounded-full ${
+                            (cliente as any).status_herbalife === 'ativo' ? 'bg-blue-500' : 'bg-gray-400'
+                          }`}></div>
+                          <span className="text-sm font-semibold">Herbalife: {(cliente as any).status_herbalife}</span>
+                        </div>
+                      )}
+                      {/* Status Lead */}
+                      {(cliente as any).is_lead && (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full bg-purple-500"></div>
+                          <span className="text-sm font-semibold text-purple-700">Lead</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div><strong>Nome:</strong> {cliente.nome}</div>
                     <div><strong>Email:</strong> {cliente.email}</div>
@@ -90,16 +122,6 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                     {cliente.instagram && (
                       <div><strong>Instagram:</strong> {cliente.instagram}</div>
                     )}
-                    <div>
-                      <strong>Status:</strong> 
-                      <span className={`ml-2 px-2 py-1 rounded text-xs ${
-                        cliente.status_plano === 'ativo' ? 'bg-green-100 text-green-700' :
-                        cliente.status_plano === 'inativo' ? 'bg-red-100 text-red-700' :
-                        'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {cliente.status_plano}
-                      </span>
-                    </div>
                   </div>
                 </div>
               )}

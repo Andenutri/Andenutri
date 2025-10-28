@@ -33,9 +33,11 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen, setView }: Sideba
           {menuItems.map((item, idx) => (
             <a
               key={idx}
-              href={item.link || '#'}
-              onClick={() => {
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
                 if (item.link && item.link !== '/') {
+                  window.location.href = item.link;
                   setSidebarOpen(false);
                 } else {
                   setView(item.view);

@@ -36,6 +36,31 @@ export default function ClientePage({ params }: { params: { id: string } }) {
             <p className="text-sm md:text-base text-gray-600 mt-1">
               📧 {cliente.email} • 📱 {cliente.whatsapp}
             </p>
+            {/* Bolinhas de Status */}
+            <div className="flex gap-3 items-center mt-2">
+              <div className="flex items-center gap-1">
+                <div className={`w-3 h-3 rounded-full ${
+                  cliente.status_plano === 'ativo' ? 'bg-green-500' :
+                  cliente.status_plano === 'inativo' ? 'bg-red-500' :
+                  'bg-yellow-500'
+                }`}></div>
+                <span className="text-sm font-semibold">Programa: {cliente.status_plano}</span>
+              </div>
+              {(cliente as any).status_herbalife && (
+                <div className="flex items-center gap-1">
+                  <div className={`w-3 h-3 rounded-full ${
+                    (cliente as any).status_herbalife === 'ativo' ? 'bg-blue-500' : 'bg-gray-400'
+                  }`}></div>
+                  <span className="text-sm font-semibold">Herbalife: {(cliente as any).status_herbalife}</span>
+                </div>
+              )}
+              {(cliente as any).is_lead && (
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                  <span className="text-sm font-semibold text-purple-700">Lead</span>
+                </div>
+              )}
+            </div>
           </div>
           <a 
             href="/clientes"
