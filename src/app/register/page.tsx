@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Register() {
   const [nome, setNome] = useState('');
@@ -11,11 +12,21 @@ export default function Register() {
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
   const router = useRouter();
+  const { signUp, isAuthenticated } = useAuth();
+
+  // Se já estiver autenticado, redirecionar para home
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro('');
+    setSuccess(false);
 
     // Validações
     if (senha !== confirmarSenha) {
@@ -31,23 +42,30 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // TODO: Integrar com Supabase Auth quando configurado
-      // Por enquanto, simularemos registro
+      const { error } = await signUp(email, senha, nome);
       
-      // Gerar tenant_id único
-      const tenantId = 'tenant-' + Date.now();
-      
-      // Salvar no localStorage como temporário
-      localStorage.setItem('user_logged_in', 'true');
-      localStorage.setItem('user_email', email);
-      localStorage.setItem('tenant_id', tenantId);
-      localStorage.setItem('user_name', nome);
-      
-      alert('✅ Conta criada com sucesso!');
-      router.push('/');
-    } catch (error) {
+      if (error) {
+        // Mensagens de erro mais amigáveis
+        if (error.message.includes('already registered')) {
+          setErro('Este email já está cadastrado. Faça login ou use outro email.');
+        } else if (error.message.includes('Password')) {
+          setErro('Senha muito fraca. Use pelo menos 6 caracteres.');
+        } else {
+          setErro(error.message || 'Erro ao criar conta. Tente novamente.');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Registro bem-sucedido
+      setSuccess(true);
+      // O usuário será redirecionado automaticamente pelo AuthContext quando fizer login
+      // Por enquanto, mostra mensagem de sucesso
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
+    } catch (error: any) {
       setErro('Erro ao criar conta. Tente novamente.');
-    } finally {
       setLoading(false);
     }
   };
@@ -64,6 +82,11 @@ export default function Register() {
 
         {/* Formulário de Registro */}
         <form onSubmit={handleRegister} className="space-y-6">
+          {success && (
+            <div className="bg-green-50 border border-green-300 text-green-700 px-4 py-3 rounded-lg">
+              ✅ Conta criada com sucesso! Redirecionando para login...
+            </div>
+          )}
           {erro && (
             <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg">
               {erro}

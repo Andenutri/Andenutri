@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,6 +11,14 @@ export default function Login() {
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { signIn, isAuthenticated } = useAuth();
+
+  // Se já estiver autenticado, redirecionar para home
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/');
+    }
+  }, [isAuthenticated, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,22 +26,25 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // TODO: Integrar com Supabase Auth quando configurado
-      // Por enquanto, simularemos login
+      const { error } = await signIn(email, senha);
       
-      if (email === 'demo@andenutri.com' && senha === 'demo123') {
-        // Salvar no localStorage como temporário
-        localStorage.setItem('user_logged_in', 'true');
-        localStorage.setItem('user_email', email);
-        localStorage.setItem('tenant_id', 'demo-tenant-123');
-        
-        router.push('/');
-      } else {
-        setErro('Email ou senha incorretos');
+      if (error) {
+        // Mensagens de erro mais amigáveis
+        if (error.message.includes('Invalid login credentials')) {
+          setErro('Email ou senha incorretos');
+        } else if (error.message.includes('Email not confirmed')) {
+          setErro('Por favor, confirme seu email antes de fazer login');
+        } else {
+          setErro(error.message || 'Erro ao fazer login. Tente novamente.');
+        }
+        setLoading(false);
+        return;
       }
-    } catch (error) {
+
+      // Login bem-sucedido - o AuthContext já atualizará o estado
+      router.push('/');
+    } catch (error: any) {
       setErro('Erro ao fazer login. Tente novamente.');
-    } finally {
       setLoading(false);
     }
   };
@@ -105,12 +117,11 @@ export default function Login() {
           </p>
         </div>
 
-        {/* Demo Account */}
-        <div className="mt-8 p-4 bg-amber-50 rounded-lg border border-amber-200">
+        {/* Info */}
+        <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-xs text-gray-600 text-center">
-            <strong>Conta Demo:</strong><br />
-            Email: demo@andenutri.com<br />
-            Senha: demo123
+            <strong>💡 Dica:</strong><br />
+            Crie sua conta em "Registre-se" ou entre com suas credenciais do Supabase.
           </p>
         </div>
       </div>

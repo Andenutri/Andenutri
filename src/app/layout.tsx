@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import AuthProviderWrapper from '@/components/AuthProviderWrapper';
 
 export const metadata: Metadata = {
   title: '🥗 ANDENUTRI - Coach de Bem-Estar',
@@ -39,7 +40,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="ANDENUTRI" />
       </head>
-      <body className="min-h-screen overflow-y-auto overflow-x-hidden">{children}</body>
+      <body className="min-h-screen overflow-y-auto overflow-x-hidden">
+        <AuthProviderWrapper>
+          {children}
+        </AuthProviderWrapper>
+      </body>
     </html>
   );
 }
