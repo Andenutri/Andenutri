@@ -8,48 +8,50 @@ Se as variáveis de ambiente não estiverem configuradas na Vercel, **nada funci
 
 ---
 
+## 👤 Dados da Conta
+
+- **Nome**: Deise Faula
+- **Email**: `deisefaula@gmail.com`
+- **Senha**: `1234546`
+
+**📖 Para criar esta conta**: Veja `supabase/CRIAR_CONTA_DEISE.md`
+
+---
+
 ## 📋 Como a Deise Pode Acessar o Sistema
 
-### Opção 1: Se a Deise JÁ criou a conta
+### Opção 1: Acessar com Conta Já Criada
 
 1. **Acesse**: `https://andenutri.com/login`
-2. **Email**: O email que ela usou no registro
-3. **Senha**: 
-   - Se a senha foi resetada via Supabase Dashboard: Use a senha definida (ex: `123456`)
-   - Se ela definiu no registro: Use a senha que ela criou
+2. **Email**: `deisefaula@gmail.com`
+3. **Senha**: `1234546`
 4. Clique em **"Entrar"**
 5. Será redirecionada automaticamente para o dashboard
 
-### Opção 2: Se a Deise AINDA NÃO criou a conta
+### Opção 2: Criar Conta Nova (se ainda não existe)
 
 1. **Acesse**: `https://andenutri.com/register`
 2. Preencha:
    - **Nome Completo**: Deise Faula
-   - **Email**: O email dela (ex: `deise@email.com`)
-   - **Senha**: Escolha uma senha (mínimo 6 caracteres) - recomendado: `123456` para depois trocar
-   - **Confirmar Senha**: Digite novamente
+   - **Email**: `deisefaula@gmail.com`
+   - **Senha**: `1234546`
+   - **Confirmar Senha**: `1234546`
 3. Clique em **"Criar Conta"**
 4. Após criar, ela será redirecionada automaticamente para dentro do sistema
 
 ---
 
-## 🔧 Configurar Senha Temporária "123456"
+## 🔧 Configurar Conta da Deise
 
-Se você quiser que a Deise entre com senha `123456` (temporária), faça:
+Para criar ou redefinir a conta da Deise com os dados acima, veja o guia completo:
 
-### Método 1: Pelo Supabase Dashboard (Recomendado)
+**📖 `supabase/CRIAR_CONTA_DEISE.md`**
 
-1. Acesse o **Supabase Dashboard** → Seu Projeto
-2. Vá em **Authentication** → **Users**
-3. Encontre o usuário da Deise (procure pelo email)
-4. Clique nos **3 pontos (⋮)** ao lado do usuário
-5. Selecione **"Reset Password"** ou **"Edit User"**
-6. Se houver opção **"Update Password"** ou **"Set Password"**, defina: `123456`
-7. Salve
-
-### Método 2: Executar Script SQL de Verificação
-
-Execute o arquivo `supabase/reset-senha-deise.sql` no SQL Editor do Supabase para verificar informações do usuário.
+Este guia contém:
+- Como criar a conta via Dashboard do Supabase
+- Como verificar se a conta foi criada
+- Como associar dados existentes
+- Troubleshooting de problemas comuns
 
 ---
 
