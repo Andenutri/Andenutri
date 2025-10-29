@@ -129,11 +129,16 @@ WHERE email = 'deisefaula@gmail.com';
 
 ## 🔗 Após Criar a Conta
 
-### 1. **Associar Dados Existentes**
+### 1. **Associar Dados Existentes** ⚠️ IMPORTANTE
 
-Se já existirem dados no sistema (clientes, avaliações, etc.), eles podem precisar ser associados ao `user_id` da Deise.
+**📖 Guia Completo**: `supabase/COMO_ASSOCIAR_DADOS_DEISE.md`
 
-Execute o script `supabase/configurar-isolamento-usuarios.sql` para associar dados existentes:
+Se já existirem dados no sistema (clientes, avaliações, etc.), você PRECISA executar o script para associá-los à conta da Deise:
+
+1. **Primeiro** (se ainda não executou): Execute `supabase/configurar-isolamento-usuarios.sql` para adicionar o campo `user_id` nas tabelas
+2. **Depois**: Execute `supabase/associar-dados-deise.sql` para associar todos os dados à Deise
+
+Ou você pode usar o método antigo do script de isolamento que associa ao primeiro usuário:
 
 1. Abra o **SQL Editor** no Supabase
 2. Cole o conteúdo de `supabase/configurar-isolamento-usuarios.sql`
