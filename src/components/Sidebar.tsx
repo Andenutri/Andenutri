@@ -13,6 +13,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen, setView }: Sideba
     { icon: '📋', label: 'Trello/Kanban', view: 'trello', link: '/' },
     { icon: '📅', label: 'Agenda', view: 'agenda', link: '/agenda' },
     { icon: '📏', label: 'Avaliações', view: 'avaliacoes', link: '/' },
+    { icon: '🔧', label: 'Ferramentas', view: 'ferramentas', link: '/ferramentas' },
     { icon: '🥗', label: 'Cardápios', view: 'cardapios', link: '/' },
     { icon: '⚙️', label: 'Configurações', view: 'configuracoes', link: '/' },
   ];
