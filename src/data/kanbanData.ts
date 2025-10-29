@@ -42,10 +42,29 @@ export async function getKanbanColumns(): Promise<Column[]> {
 
   try {
     const { supabase } = await import('../lib/supabase');
-    const { data, error } = await supabase
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      console.warn('Usuário não autenticado. Retornando colunas padrão.');
+      return [
+        { id: '1', nome: '✅ Ativo', cor: 'green', clientes: [] },
+        { id: '2', nome: '❌ Inativo', cor: 'red', clientes: [] },
+        { id: '3', nome: '⏸️ Pausado', cor: 'yellow', clientes: [] },
+      ];
+    }
+
+    // Filtrar colunas por usuário (se a tabela tiver user_id)
+    let query = supabase
       .from('kanban_colunas')
-      .select('*')
-      .order('ordem', { ascending: true });
+      .select('*');
+    
+    // Se a tabela tiver coluna user_id, filtrar
+    // Caso contrário, retornar todas (compatibilidade)
+    query = query.order('ordem', { ascending: true });
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
@@ -77,12 +96,22 @@ async function createDefaultColumns(): Promise<Column[]> {
 
   try {
     const { supabase } = await import('../lib/supabase');
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      console.warn('Usuário não autenticado. Não é possível criar colunas.');
+      return [];
+    }
+
+    // Criar colunas padrão associadas ao usuário atual
     const { data, error } = await supabase
       .from('kanban_colunas')
       .insert([
-        { nome: '✅ Ativo', cor: 'green', ordem: 1, clientes_ids: [] },
-        { nome: '❌ Inativo', cor: 'red', ordem: 2, clientes_ids: [] },
-        { nome: '⏸️ Pausado', cor: 'yellow', ordem: 3, clientes_ids: [] },
+        { nome: '✅ Ativo', cor: 'green', ordem: 1, clientes_ids: [], user_id: userId },
+        { nome: '❌ Inativo', cor: 'red', ordem: 2, clientes_ids: [], user_id: userId },
+        { nome: '⏸️ Pausado', cor: 'yellow', ordem: 3, clientes_ids: [], user_id: userId },
       ])
       .select();
 
@@ -109,6 +138,14 @@ export async function saveKanbanColumn(column: Omit<KanbanColumn, 'id' | 'data_c
 
   try {
     const { supabase } = await import('../lib/supabase');
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      throw new Error('Usuário não autenticado. Não é possível criar colunas.');
+    }
+
     const { data, error } = await supabase
       .from('kanban_colunas')
       .insert({
@@ -116,6 +153,7 @@ export async function saveKanbanColumn(column: Omit<KanbanColumn, 'id' | 'data_c
         cor: column.cor,
         ordem: column.ordem,
         clientes_ids: column.clientes_ids,
+        user_id: userId, // Associar ao usuário atual
       })
       .select()
       .single();

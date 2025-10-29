@@ -43,26 +43,38 @@ export async function getAllClientes(): Promise<ClienteComFormulario[]> {
     return mockClientes;
   }
 
-  // Buscar do Supabase
+  // Buscar do Supabase - FILTRADO POR USER_ID
   try {
     const { supabase } = await import('../lib/supabase');
-    const { data, error } = await supabase
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      // Se não houver usuário autenticado, retornar vazio
+      console.warn('Usuário não autenticado. Retornando lista vazia.');
+      return [];
+    }
+
+    // Buscar apenas clientes do usuário atual
+    let query = supabase
       .from('clientes')
       .select('*')
+      .eq('user_id', userId)
       .order('data_criacao', { ascending: false });
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Erro ao buscar clientes do Supabase:', error);
-      // Retorna mock como fallback
-      const { mockClientes } = await import('./mockClientes');
-      return mockClientes;
+      // Retorna vazio em caso de erro (não mock, para garantir isolamento)
+      return [];
     }
 
     return data || [];
   } catch (error) {
     console.error('Erro ao importar Supabase:', error);
-    const { mockClientes } = await import('./mockClientes');
-    return mockClientes;
+    return [];
   }
 }
 
@@ -99,9 +111,28 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
 
   try {
     const { supabase } = await import('../lib/supabase');
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      alert('❌ Você precisa estar autenticado para salvar clientes.');
+      return null;
+    }
     
     if (cliente.id) {
-      // Atualizar cliente existente
+      // Atualizar cliente existente - verificar se pertence ao usuário
+      const { data: existingCliente, error: fetchError } = await supabase
+        .from('clientes')
+        .select('user_id')
+        .eq('id', cliente.id)
+        .single();
+
+      if (fetchError || existingCliente?.user_id !== userId) {
+        alert('❌ Você não tem permissão para editar este cliente.');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('clientes')
         .update({
@@ -111,16 +142,19 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
           whatsapp: cliente.whatsapp,
           instagram: cliente.instagram,
           status_programa: cliente.status_plano,
+          perfil: cliente.perfil || null,
+          is_lead: cliente.is_lead || false,
           data_atualizacao: new Date().toISOString(),
         })
         .eq('id', cliente.id)
+        .eq('user_id', userId) // Garantir que pertence ao usuário
         .select()
         .single();
 
       if (error) throw error;
       return data;
     } else {
-      // Criar novo cliente
+      // Criar novo cliente - user_id será preenchido pelo trigger automaticamente
       const { data, error } = await supabase
         .from('clientes')
         .insert({
@@ -130,6 +164,10 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
           whatsapp: cliente.whatsapp || '',
           instagram: cliente.instagram || '',
           status_programa: cliente.status_plano || 'ativo',
+          perfil: cliente.perfil || null,
+          is_lead: cliente.is_lead || false,
+          column_id: cliente.column_id || null,
+          user_id: userId, // Associar ao usuário atual
           data_criacao: new Date().toISOString(),
         })
         .select()
@@ -143,6 +181,7 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
   } catch (error) {
     console.error('Erro ao salvar no Supabase:', error);
     alert('❌ Erro ao salvar no Supabase. Verifique o console.');
+    return null;
   }
 }
 
@@ -155,13 +194,31 @@ export async function getClienteById(id: string): Promise<ClienteComFormulario |
 
   try {
     const { supabase } = await import('../lib/supabase');
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      console.warn('Usuário não autenticado. Não é possível buscar cliente.');
+      return undefined;
+    }
+
+    // Buscar apenas se pertencer ao usuário atual
     const { data, error } = await supabase
       .from('clientes')
       .select('*')
       .eq('id', id)
+      .eq('user_id', userId) // Filtrar por usuário
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // PGRST116 = nenhum resultado encontrado
+      if (error.code === 'PGRST116') {
+        console.warn('Cliente não encontrado ou não pertence ao usuário atual');
+        return undefined;
+      }
+      throw error;
+    }
     return data;
   } catch (error) {
     console.error('Erro ao buscar cliente:', error);
