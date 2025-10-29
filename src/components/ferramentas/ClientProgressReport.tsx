@@ -167,7 +167,11 @@ export default function ClientProgressReport({ clienteId }: ClientProgressReport
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
           <div className="text-sm text-gray-600 mb-1">Evolução de Peso</div>
-          <div className={`text-2xl font-bold ${evolucao?.peso && evolucao.peso < 0 ? 'text-green-600' : evolucao?.peso && evolucao.peso > 0 ? 'text-red-600' : 'text-gray-600'}`}>
+          <div className={`text-2xl font-bold ${
+            evolucao?.peso !== null && evolucao.peso !== undefined && evolucao.peso < 0 ? 'text-green-600' : 
+            evolucao?.peso !== null && evolucao.peso !== undefined && evolucao.peso > 0 ? 'text-red-600' : 
+            'text-gray-600'
+          }`}>
             {evolucao?.peso !== null && evolucao.peso !== undefined
               ? `${evolucao.peso > 0 ? '+' : ''}${evolucao.peso.toFixed(1)} kg`
               : 'N/A'}
