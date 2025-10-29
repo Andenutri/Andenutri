@@ -46,10 +46,19 @@ export default function Register() {
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
       const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
       
-      if (!supabaseUrl || !supabaseKey || 
-          supabaseUrl === '' || supabaseKey === '' ||
-          supabaseUrl.includes('placeholder') || supabaseUrl === 'https://placeholder.supabase.co') {
-        setErro('⚠️ Supabase não está configurado. Por favor, configure as variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.');
+      // Verificação mais robusta
+      const isConfigured = supabaseUrl && 
+                            supabaseKey && 
+                            supabaseUrl.trim() !== '' && 
+                            supabaseKey.trim() !== '' &&
+                            !supabaseUrl.includes('placeholder') && 
+                            supabaseUrl !== 'https://placeholder.supabase.co' &&
+                            supabaseUrl.startsWith('https://');
+      
+      if (!isConfigured) {
+        // Mensagem mais detalhada para ajudar no diagnóstico
+        const debugInfo = `URL: ${supabaseUrl ? '✅ definida' : '❌ não definida'} | Key: ${supabaseKey ? '✅ definida' : '❌ não definida'}`;
+        setErro(`⚠️ Supabase não está configurado na Vercel. Por favor, configure as variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY nas configurações da Vercel e faça um redeploy. (${debugInfo})`);
         setLoading(false);
         return;
       }
