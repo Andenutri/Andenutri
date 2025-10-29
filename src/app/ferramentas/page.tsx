@@ -1,5 +1,8 @@
 'use client';
 
+// Marcar como página dinâmica para evitar erro de pré-renderização sem variáveis do Supabase
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import ClientProgressReport from '@/components/ferramentas/ClientProgressReport';

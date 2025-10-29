@@ -29,8 +29,32 @@ export interface ConfiguracaoProfissional {
   data_atualizacao: string;
 }
 
+// Verificar se Supabase está configurado
+function isSupabaseConfigured(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  return Boolean(
+    url && 
+    key && 
+    url !== '' && 
+    key !== '' && 
+    url !== 'https://placeholder.supabase.co' &&
+    url.startsWith('https://')
+  );
+}
+
 // Buscar configuração atual
 export async function getConfiguracaoAtual(): Promise<ConfiguracaoProfissional | null> {
+  // Se Supabase não estiver configurado, retornar configuração padrão
+  if (!isSupabaseConfigured()) {
+    return {
+      id: '',
+      ativo: true,
+      data_criacao: new Date().toISOString(),
+      data_atualizacao: new Date().toISOString(),
+    };
+  }
+
   try {
     const { data, error } = await supabase
       .from('configuracoes_profissional')
@@ -43,7 +67,12 @@ export async function getConfiguracaoAtual(): Promise<ConfiguracaoProfissional |
     if (error && error.code !== 'PGRST116') {
       // PGRST116 = nenhum resultado encontrado (não é erro)
       console.error('Erro ao buscar configuração:', error);
-      return null;
+      return {
+        id: '',
+        ativo: true,
+        data_criacao: new Date().toISOString(),
+        data_atualizacao: new Date().toISOString(),
+      };
     }
 
     if (!data) {
@@ -59,7 +88,12 @@ export async function getConfiguracaoAtual(): Promise<ConfiguracaoProfissional |
     return transformConfiguracao(data);
   } catch (error) {
     console.error('Erro ao buscar configuração:', error);
-    return null;
+    return {
+      id: '',
+      ativo: true,
+      data_criacao: new Date().toISOString(),
+      data_atualizacao: new Date().toISOString(),
+    };
   }
 }
 
