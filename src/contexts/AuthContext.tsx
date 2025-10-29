@@ -10,7 +10,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, nome?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, nome?: string) => Promise<{ error: any; data: any }>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -24,20 +24,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar sessão existente
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Verificar sessão existente ao carregar
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Erro ao obter sessão:', error);
+        }
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      } catch (error) {
+        console.error('Erro ao inicializar auth:', error);
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
 
     // Listener para mudanças de autenticação
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Se fizer login ou signup com sessão, garantir que está salvo
+      if (session && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        // A sessão já está sendo salva automaticamente pelo Supabase
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -71,18 +90,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: {
             nome: nome || '',
           },
+          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/login` : undefined,
         },
       });
 
       if (error) {
-        return { error };
+        return { error, data: null };
       }
 
-      setSession(data.session);
-      setUser(data.user);
-      return { error: null };
+      // Atualizar estado apenas se houver sessão (usuario confirmado ou confirmação desabilitada)
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.user);
+      } else {
+        // Usuário criado mas precisa confirmar email
+        // Manter estado atual (não fazer login automático)
+      }
+
+      return { error: null, data };
     } catch (error: any) {
-      return { error };
+      return { error, data: null };
     }
   };
 

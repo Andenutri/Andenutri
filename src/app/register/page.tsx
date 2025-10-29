@@ -42,11 +42,12 @@ export default function Register() {
     setLoading(true);
 
     try {
-      const { error } = await signUp(email, senha, nome);
+      const result = await signUp(email, senha, nome);
+      const { error, data } = result;
       
       if (error) {
         // Mensagens de erro mais amigáveis
-        if (error.message.includes('already registered')) {
+        if (error.message.includes('already registered') || error.message.includes('User already registered')) {
           setErro('Este email já está cadastrado. Faça login ou use outro email.');
         } else if (error.message.includes('Password')) {
           setErro('Senha muito fraca. Use pelo menos 6 caracteres.');
@@ -57,14 +58,32 @@ export default function Register() {
         return;
       }
 
-      // Registro bem-sucedido
-      setSuccess(true);
-      // O usuário será redirecionado automaticamente pelo AuthContext quando fizer login
-      // Por enquanto, mostra mensagem de sucesso
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+      // Verificar se usuário foi criado e se há sessão (login automático)
+      if (data?.user && data?.session) {
+        // Login automático bem-sucedido - sessão criada
+        setSuccess(true);
+        setTimeout(() => {
+          router.push('/');
+        }, 1500);
+        return;
+      } else if (data?.user) {
+        // Usuário criado mas precisa confirmar email
+        setSuccess(true);
+        setErro('');
+        // Mostrar mensagem informativa
+        alert('✅ Conta criada! Por favor, verifique seu email para confirmar a conta antes de fazer login.');
+        setTimeout(() => {
+          router.push('/login');
+        }, 2000);
+        setLoading(false);
+        return;
+      }
+
+      // Caso nenhum dos anteriores
+      setErro('Erro ao criar conta. Tente novamente.');
+      setLoading(false);
     } catch (error: any) {
+      console.error('Erro no registro:', error);
       setErro('Erro ao criar conta. Tente novamente.');
       setLoading(false);
     }
