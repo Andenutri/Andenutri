@@ -2,6 +2,9 @@
 
 import { ClienteComFormulario } from './mockClientes';
 
+// Re-exportar o tipo para facilitar importações
+export type { ClienteComFormulario };
+
 // Verifica se está conectado ao Supabase
 export function isSupabaseConnected(): boolean {
   if (typeof window === 'undefined') return false;
