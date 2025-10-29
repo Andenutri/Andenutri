@@ -42,14 +42,28 @@ export default function Register() {
     setLoading(true);
 
     try {
+      // Verificar se Supabase está configurado
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!supabaseUrl || !supabaseKey || 
+          supabaseUrl === '' || supabaseKey === '' ||
+          supabaseUrl.includes('placeholder') || supabaseUrl === 'https://placeholder.supabase.co') {
+        setErro('⚠️ Supabase não está configurado. Por favor, configure as variáveis de ambiente NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.');
+        setLoading(false);
+        return;
+      }
+
       const result = await signUp(email, senha, nome);
       const { error, data } = result;
       
       if (error) {
         // Mensagens de erro mais amigáveis
-        if (error.message.includes('already registered') || error.message.includes('User already registered')) {
+        if (error.message && error.message.includes('Failed to fetch')) {
+          setErro('❌ Erro de conexão com o servidor. Verifique se o Supabase está configurado corretamente nas variáveis de ambiente.');
+        } else if (error.message && (error.message.includes('already registered') || error.message.includes('User already registered'))) {
           setErro('Este email já está cadastrado. Faça login ou use outro email.');
-        } else if (error.message.includes('Password')) {
+        } else if (error.message && error.message.includes('Password')) {
           setErro('Senha muito fraca. Use pelo menos 6 caracteres.');
         } else {
           setErro(error.message || 'Erro ao criar conta. Tente novamente.');
