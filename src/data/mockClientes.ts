@@ -7,6 +7,9 @@ export interface ClienteComFormulario {
   telefone: string;
   whatsapp: string;
   instagram: string;
+  perfil?: string | null;
+  is_lead?: boolean;
+  column_id?: string | null;
   formulario_preenchido: boolean;
   formulario: {
     nome_completo: string;
