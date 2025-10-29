@@ -73,7 +73,9 @@ export default function AdvancedFilters({ clientes, columns = [], onFilterChange
     // Filtro por status do programa
     if (filtros.statusPrograma) {
       filtered = filtered.filter((cliente) => {
-        return cliente.status_programa === filtros.statusPrograma;
+        // Suporta tanto status_plano quanto status_programa (do Supabase)
+        const status = cliente.status_plano || (cliente as any).status_programa;
+        return status === filtros.statusPrograma;
       });
     }
 

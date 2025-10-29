@@ -351,7 +351,7 @@ export default function FerramentasPage() {
                   {cliente.email && <p>📧 {cliente.email}</p>}
                   {cliente.telefone && <p>📞 {cliente.telefone}</p>}
                   <div className="flex gap-2 mt-2">
-                    {cliente.status_programa === 'ativo' && (
+                    {(cliente.status_plano === 'ativo' || (cliente as any).status_programa === 'ativo') && (
                       <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">
                         ✅ Programa Ativo
                       </span>
