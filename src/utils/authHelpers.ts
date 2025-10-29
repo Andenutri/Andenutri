@@ -18,12 +18,13 @@ export async function getCurrentUserId(): Promise<string | null> {
 
 /**
  * Obtém o user_id do usuário atualmente autenticado (síncrono via session)
+ * Nota: Esta função é assíncrona agora devido à API do Supabase v2
  * @returns UUID do usuário ou null se não estiver autenticado
  */
-export function getCurrentUserIdSync(): string | null {
+export async function getCurrentUserIdSync(): Promise<string | null> {
   try {
-    // Tentar obter da sessão armazenada
-    const session = supabase.auth.session();
+    // Obter sessão de forma assíncrona (getSession é async no Supabase v2)
+    const { data: { session } } = await supabase.auth.getSession();
     return session?.user?.id || null;
   } catch (error) {
     return null;
