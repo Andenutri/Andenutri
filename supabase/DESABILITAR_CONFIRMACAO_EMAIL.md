@@ -39,26 +39,45 @@ Permitir que usuários façam login imediatamente após criar a conta, **sem pre
 
 ## 🔧 Método 2: Via SQL (Alternativo)
 
-Se preferir fazer via SQL, execute no **SQL Editor** do Supabase:
+### ⚠️ IMPORTANTE: `confirmed_at` é uma coluna gerada
+
+A coluna `confirmed_at` **não pode ser atualizada diretamente via SQL** porque é uma coluna gerada automaticamente pelo Supabase.
+
+### Solução: Confirmar via Dashboard ou API
+
+**Opção A - Via Dashboard (Recomendado):**
+1. Vá em **Authentication** → **Users**
+2. Para cada usuário, clique nos **3 pontos (⋮)**
+3. Selecione **"Confirm User"** ou **"Auto Confirm"**
+
+**Opção B - Função SQL para Confirmar (Alternativa):**
+
+Execute esta função no **SQL Editor** do Supabase para confirmar usuários:
 
 ```sql
--- Desabilitar confirmação de email
-UPDATE auth.config
-SET 
-  enable_signup = true,
-  enable_email_signup = true,
-  enable_email_confirmations = false
-WHERE id = 1;
+-- Função para confirmar usuário via trigger
+-- Nota: Esta função usa uma abordagem alternativa já que confirmed_at é gerada
 
--- Confirmar todos os usuários existentes (opcional)
-UPDATE auth.users
-SET 
-  confirmed_at = NOW(),
-  email_confirmed_at = NOW()
-WHERE confirmed_at IS NULL OR email_confirmed_at IS NULL;
+CREATE OR REPLACE FUNCTION confirm_user_by_email(user_email TEXT)
+RETURNS void AS $$
+BEGIN
+  -- Esta função precisa ser executada via Admin API
+  -- Por segurança, o Supabase não permite atualizar confirmed_at diretamente
+  RAISE NOTICE 'Para confirmar usuário %, use o Dashboard: Authentication → Users → 3 pontos → Confirm User', user_email;
+END;
+$$ LANGUAGE plpgsql;
 ```
 
-⚠️ **NOTA**: A tabela `auth.config` pode não existir em todas as versões do Supabase. Se der erro, use apenas o Método 1 (Dashboard).
+⚠️ **MELHOR SOLUÇÃO**: Use o **Dashboard** do Supabase para confirmar usuários. É mais simples e seguro!
+
+### Confirmar Todos os Usuários de Uma Vez (Dashboard)
+
+1. Vá em **Authentication** → **Users**
+2. Selecione todos os usuários (checkbox no topo)
+3. Clique em **"Bulk Actions"** (se disponível)
+4. Selecione **"Confirm Users"** ou confirme um por um
+
+**Se não houver bulk action, confirme manualmente cada usuário.**
 
 ---
 
@@ -97,9 +116,10 @@ Para ver como está configurado agora:
 
 ### Usuários Já Cadastrados
 
-- Se você já tem usuários cadastrados que não confirmaram email, você pode:
-  1. Confirmá-los manualmente no Dashboard (Authentication → Users → 3 pontos → "Confirm User")
-  2. Ou executar o SQL acima para confirmar todos de uma vez
+- Se você já tem usuários cadastrados que não confirmaram email:
+  1. **Melhor solução**: Confirmá-los manualmente no Dashboard (Authentication → Users → 3 pontos → "Confirm User")
+  2. **⚠️ NÃO funciona**: Tentar atualizar via SQL (a coluna `confirmed_at` é gerada e não pode ser atualizada diretamente)
+  3. **Alternativa**: Desabilite a confirmação de email para novos usuários (veja Método 1 acima)
 
 ---
 
