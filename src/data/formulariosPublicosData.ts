@@ -290,48 +290,6 @@ export async function salvarFormularioPublico(
     }
 
     if (formularioError) {
-        cliente_id: cliente.id,
-        nome_completo: dados.nome_completo,
-        idade: dados.idade,
-        altura: dados.altura,
-        peso_atual: dados.peso_atual,
-        peso_desejado: dados.peso_desejado,
-        conheceu_programa: dados.conheceu_programa,
-        trabalho: dados.trabalho,
-        horario_trabalho: dados.horario_trabalho,
-        dias_trabalho: dados.dias_trabalho,
-        hora_acorda: dados.hora_acorda,
-        hora_dorme: dados.hora_dorme,
-        qualidade_sono: dados.qualidade_sono,
-        casada: dados.casada,
-        filhos: dados.filhos,
-        nomes_idades_filhos: dados.nomes_idades_filhos,
-        condicao_saude: dados.condicao_saude,
-        uso_medicacao: dados.uso_medicacao,
-        medicacao_qual: dados.medicacao_qual,
-        restricao_alimentar: dados.restricao_alimentar,
-        usa_suplemento: dados.usa_suplemento,
-        quais_suplementos: dados.quais_suplementos,
-        sente_dor: dados.sente_dor,
-        onde_dor: dados.onde_dor,
-        cafe_manha: dados.cafe_manha,
-        lanche_manha: dados.lanche_manha,
-        almoco: dados.almoco,
-        lanche_tarde: dados.lanche_tarde,
-        jantar: dados.jantar,
-        ceia: dados.ceia,
-        alcool_freq: dados.alcool_freq,
-        consumo_agua: dados.consumo_agua,
-        intestino_vezes_semana: dados.intestino_vezes_semana,
-        atividade_fisica: dados.atividade_fisica,
-        refeicao_dificil: dados.refeicao_dificil,
-        belisca_quando: dados.belisca_quando,
-        muda_fins_semana: dados.muda_fins_semana,
-        escala_cuidado: dados.escala_cuidado,
-        data_preenchimento: new Date().toISOString(),
-      });
-
-    if (formularioError) {
       // Não deletar cliente se formulário falhar - pode ser atualização
       return {
         success: false,
