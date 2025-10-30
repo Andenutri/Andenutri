@@ -7,6 +7,7 @@ import ClientList from '@/components/ClientList';
 import TrelloView from '@/components/TrelloView';
 import AvaliacoesView from '@/components/AvaliacoesView';
 import GerenciarLinksFormulario from '@/components/GerenciarLinksFormulario';
+import MeuLinkFormulario from '@/components/MeuLinkFormulario';
 
 export default function Home() {
   const [view, setView] = useState('dashboard');
@@ -52,7 +53,7 @@ export default function Home() {
         {view === 'avaliacoes' && <AvaliacoesView sidebarOpen={sidebarOpen} />}
         {view === 'links-formulario' && (
           <div className="p-4 md:p-6">
-            <GerenciarLinksFormulario />
+            <MeuLinkFormulario />
           </div>
         )}
       </div>

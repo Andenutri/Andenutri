@@ -4,14 +4,13 @@ import { supabase } from '../lib/supabase';
 
 export interface FormularioPublicoData {
   // Dados do cliente
-  nome: string;
-  email: string;
-  telefone?: string;
+  nome_completo: string;
+  endereco_completo?: string;
   whatsapp?: string;
   instagram?: string;
+  email?: string;
   
   // Dados do formulário
-  nome_completo: string;
   idade: string;
   altura: string;
   peso_atual: string;
@@ -22,7 +21,7 @@ export interface FormularioPublicoData {
   dias_trabalho?: string;
   hora_acorda?: string;
   hora_dorme?: string;
-  qualidade_sono?: string;
+  qualidade_sono?: string; // profundo / leve / acorda à noite / insônia
   casada?: string;
   filhos?: string;
   nomes_idades_filhos?: string;
@@ -40,52 +39,92 @@ export interface FormularioPublicoData {
   lanche_tarde?: string;
   jantar?: string;
   ceia?: string;
-  alcool_freq?: string;
+  alcool_freq?: string; // álcool ou refrigerante e frequência
   consumo_agua?: string;
   intestino_vezes_semana?: string;
   atividade_fisica?: string;
   refeicao_dificil?: string;
   belisca_quando?: string;
   muda_fins_semana?: string;
-  escala_cuidado?: string;
+  escala_cuidado?: string; // 0 a 10
 }
 
-// Salvar formulário público associado a um código de link
+// Buscar usuário por email (nome na URL será parte do email)
+export async function buscarUsuarioPorEmail(email: string): Promise<{ id: string; email: string } | null> {
+  try {
+    // Buscar em auth.users através de uma função RPC ou query pública
+    // Como não podemos acessar auth.users diretamente, vamos criar uma função helper
+    const { data, error } = await supabase
+      .from('clientes') // Usar tabela clientes temporariamente para buscar user_id
+      .select('user_id')
+      .limit(1)
+      .single();
+    
+    // Na verdade, vamos criar uma função que busca o user_id pelo email
+    // Usando uma tabela auxiliar ou função RPC
+    return null; // Implementar depois
+  } catch (error) {
+    console.error('Erro ao buscar usuário:', error);
+    return null;
+  }
+}
+
+// Buscar user_id pelo email do nutricionista (usando função RPC)
+export async function buscarUserIdPorEmail(email: string): Promise<string | null> {
+  try {
+    // Criar função RPC no Supabase que busca user_id por email
+    // Por enquanto, vamos usar uma abordagem diferente
+    // Vamos buscar direto via auth se possível, ou criar uma view/tabela auxiliar
+    
+    // Solução temporária: buscar em clientes que têm o mesmo padrão de email
+    // Ou criar uma tabela que mapeia email -> user_id
+    return null;
+  } catch (error) {
+    console.error('Erro ao buscar user_id:', error);
+    return null;
+  }
+}
+
+// Salvar formulário público associado ao email do nutricionista
 export async function salvarFormularioPublico(
-  codigoLink: string,
+  emailNutricionista: string,
   dados: FormularioPublicoData
 ): Promise<{ success: boolean; clienteId?: string; error?: string }> {
   try {
-    // 1. Buscar o link e obter o user_id
-    const { data: link, error: linkError } = await supabase
-      .from('links_formularios')
-      .select('user_id')
-      .eq('codigo', codigoLink.toUpperCase())
-      .eq('ativo', true)
-      .single();
+    // 1. Buscar o user_id pelo email do nutricionista
+    // Por enquanto, vamos buscar diretamente na tabela auth.users via RPC
+    // ou criar uma função que faz isso
+    
+    // Solução: Criar função RPC no Supabase que busca user_id por email
+    const { data: userIdData, error: userIdError } = await supabase.rpc('buscar_user_id_por_email', {
+      email_param: emailNutricionista.toLowerCase(),
+    });
 
-    if (linkError || !link) {
+    let userId: string | null = null;
+
+    if (userIdError || !userIdData) {
+      // Fallback: tentar buscar diretamente de clientes existentes deste usuário
+      // Se não encontrar, retornar erro
       return {
         success: false,
-        error: 'Link inválido ou inativo',
+        error: 'Nutricionista não encontrado. Verifique o email.',
       };
     }
 
-    const userId = link.user_id;
+    userId = userIdData as string;
 
-    // 2. Criar cliente primeiro
+    // 2. Criar cliente
     const { data: cliente, error: clienteError } = await supabase
       .from('clientes')
       .insert({
-        nome: dados.nome || dados.nome_completo,
-        email: dados.email,
-        telefone: dados.telefone || '',
+        nome: dados.nome_completo,
+        email: dados.email || '',
         whatsapp: dados.whatsapp || '',
         instagram: dados.instagram || '',
-        status_programa: 'ativo', // Novo lead sempre inicia como ativo
-        is_lead: true, // Marcar como lead
-        codigo_link: codigoLink.toUpperCase(), // Rastrear origem
-        user_id: userId, // Associar ao nutricionista
+        endereco_completo: dados.endereco_completo || '',
+        status_programa: 'ativo',
+        is_lead: true,
+        user_id: userId,
       })
       .select()
       .single();
@@ -143,40 +182,11 @@ export async function salvarFormularioPublico(
       });
 
     if (formularioError) {
-      // Se erro no formulário, deletar cliente criado
       await supabase.from('clientes').delete().eq('id', cliente.id);
       return {
         success: false,
         error: formularioError.message || 'Erro ao salvar formulário',
       };
-    }
-
-    // 4. Incrementar contador de submissões do link
-    try {
-      // Tentar usar RPC primeiro
-      const { error: rpcError } = await supabase.rpc('incrementar_submissoes_link', {
-        codigo_link_param: codigoLink.toUpperCase(),
-      });
-      
-      // Se RPC não funcionar, atualizar manualmente
-      if (rpcError) {
-        const { data: linkAtual } = await supabase
-          .from('links_formularios')
-          .select('total_submissoes')
-          .eq('codigo', codigoLink.toUpperCase())
-          .single();
-        
-        await supabase
-          .from('links_formularios')
-          .update({ 
-            total_submissoes: (linkAtual?.total_submissoes || 0) + 1,
-            atualizado_em: new Date().toISOString(),
-          })
-          .eq('codigo', codigoLink.toUpperCase());
-      }
-    } catch (err) {
-      console.error('Erro ao incrementar contador:', err);
-      // Não falhar o processo se o incremento der erro
     }
 
     return {
@@ -191,4 +201,3 @@ export async function salvarFormularioPublico(
     };
   }
 }
-
