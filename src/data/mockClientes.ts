@@ -8,6 +8,7 @@ export interface ClienteComFormulario {
   whatsapp: string;
   instagram: string;
   endereco_completo?: string;
+  codigo_reavaliacao?: string;
   perfil?: string | null;
   is_lead?: boolean;
   column_id?: string | null;

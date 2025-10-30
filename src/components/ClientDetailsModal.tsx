@@ -10,6 +10,8 @@ import EditarPreConsultaModal from './EditarPreConsultaModal';
 import EditarAvaliacaoFisicaModal from './EditarAvaliacaoFisicaModal';
 import EditarAvaliacaoEmocionalModal from './EditarAvaliacaoEmocionalModal';
 import AvaliacaoFisicaEditavel from './AvaliacaoFisicaEditavel';
+import LinkReavaliacaoCliente from './LinkReavaliacaoCliente';
+import { getReavaliacoesCliente, type ReavaliacaoResposta } from '@/data/reavaliacoesData';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -36,13 +38,28 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
   const [showEditarAvaliacaoEmocionalModal, setShowEditarAvaliacaoEmocionalModal] = useState(false);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [sectionToEdit, setSectionToEdit] = useState<string | null>(null);
+  const [reavaliacoes, setReavaliacoes] = useState<ReavaliacaoResposta[]>([]);
+  const [loadingReavaliacoes, setLoadingReavaliacoes] = useState(false);
 
   const toggleSection = (section: keyof typeof sectionsExpanded) => {
     setSectionsExpanded(prev => ({
       ...prev,
       [section]: !prev[section]
     }));
+    
+    // Carregar reavaliações quando expandir a seção
+    if (section === 'reavaliacoes' && !sectionsExpanded.reavaliacoes && cliente) {
+      carregarReavaliacoes();
+    }
   };
+
+  async function carregarReavaliacoes() {
+    if (!cliente) return;
+    setLoadingReavaliacoes(true);
+    const reavals = await getReavaliacoesCliente(cliente.id);
+    setReavaliacoes(reavals);
+    setLoadingReavaliacoes(false);
+  }
 
   if (!isOpen || !cliente) return null;
 
@@ -169,6 +186,111 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                 )}
               </div>
             )}
+
+            {/* Link de Reavaliação */}
+            <div className="border-2 border-green-200 rounded-xl bg-green-50 p-4">
+              <LinkReavaliacaoCliente cliente={cliente} />
+            </div>
+
+            {/* Reavaliações Preenchidas */}
+            <div className="border-2 border-green-100 rounded-xl bg-green-50">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleSection('reavaliacoes')}
+                  className="flex-1 flex items-center justify-between p-4 font-bold text-green-800 hover:bg-green-100 transition-colors rounded-xl"
+                >
+                  <h3>📋 Reavaliações Preenchidas</h3>
+                  <span className="text-2xl">{sectionsExpanded.reavaliacoes ? '−' : '+'}</span>
+                </button>
+              </div>
+              
+              {sectionsExpanded.reavaliacoes && (
+                <div className="p-4 border-t border-green-200">
+                  {loadingReavaliacoes ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-600 mx-auto mb-2"></div>
+                      <p className="text-sm text-gray-600">Carregando reavaliações...</p>
+                    </div>
+                  ) : reavaliacoes.length === 0 ? (
+                    <div className="text-center py-8 bg-white rounded-lg border-2 border-dashed border-green-300">
+                      <div className="text-4xl mb-2">📝</div>
+                      <p className="text-gray-600">Nenhuma reavaliação preenchida ainda</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Compartilhe o link acima com {cliente.nome}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {reavaliacoes.map((reaval, index) => (
+                        <div key={reaval.id || index} className="bg-white rounded-lg p-4 border-2 border-green-200">
+                          <div className="flex items-center justify-between mb-3 pb-3 border-b">
+                            <h4 className="font-semibold text-green-700">
+                              Reavaliação #{reavaliacoes.length - index}
+                            </h4>
+                            <span className="text-xs text-gray-500">
+                              {reaval.data_preenchimento 
+                                ? new Date(reaval.data_preenchimento).toLocaleDateString('pt-BR')
+                                : 'Data não disponível'}
+                            </span>
+                          </div>
+                          
+                          <div className="space-y-3 text-sm">
+                            {reaval.peso_atual && (
+                              <div>
+                                <strong className="text-gray-700">⚖️ Peso atual:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.peso_atual}</p>
+                              </div>
+                            )}
+                            {reaval.mudancas_corpo_disposicao && (
+                              <div>
+                                <strong className="text-gray-700">💪 Mudanças percebidas:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.mudancas_corpo_disposicao}</p>
+                              </div>
+                            )}
+                            {reaval.energia_dia && (
+                              <div>
+                                <strong className="text-gray-700">⚡ Energia:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.energia_dia}</p>
+                              </div>
+                            )}
+                            {reaval.intestino_sono && (
+                              <div>
+                                <strong className="text-gray-700">😴 Intestino e sono:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.intestino_sono}</p>
+                              </div>
+                            )}
+                            {reaval.rotina_alimentacao_organizada && (
+                              <div>
+                                <strong className="text-gray-700">🍽️ Rotina alimentar:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.rotina_alimentacao_organizada}</p>
+                              </div>
+                            )}
+                            {reaval.o_que_ajudou && (
+                              <div>
+                                <strong className="text-gray-700">✅ O que ajudou:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.o_que_ajudou}</p>
+                              </div>
+                            )}
+                            {reaval.o_que_atrapalhou && (
+                              <div>
+                                <strong className="text-gray-700">⚠️ O que atrapalhou:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.o_que_atrapalhou}</p>
+                              </div>
+                            )}
+                            {reaval.maior_foco_nova_fase && (
+                              <div>
+                                <strong className="text-gray-700">🎯 Foco para nova fase:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.maior_foco_nova_fase}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Avaliação Física Editável */}
             <div className="border-2 border-green-100 rounded-xl overflow-hidden">
