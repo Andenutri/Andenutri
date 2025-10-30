@@ -113,33 +113,183 @@ export async function salvarFormularioPublico(
 
     userId = userIdData as string;
 
-    // 2. Criar cliente
-    const { data: cliente, error: clienteError } = await supabase
-      .from('clientes')
-      .insert({
-        nome: dados.nome_completo,
-        email: dados.email || '',
-        whatsapp: dados.whatsapp || '',
-        instagram: dados.instagram || '',
-        endereco_completo: dados.endereco_completo || '',
-        status_programa: 'ativo',
-        is_lead: true,
-        user_id: userId,
-      })
-      .select()
-      .single();
+    // 2. Verificar se cliente já existe (por email ou whatsapp)
+    let clienteId: string;
+    
+    if (dados.email || dados.whatsapp) {
+      const { data: clienteExistente } = await supabase
+        .from('clientes')
+        .select('id, nome, email, whatsapp, instagram, endereco_completo')
+        .or(
+          (dados.email && dados.whatsapp)
+            ? `email.eq.${dados.email},whatsapp.eq.${dados.whatsapp}`
+            : dados.email
+            ? `email.eq.${dados.email}`
+            : `whatsapp.eq.${dados.whatsapp}`
+        )
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    if (clienteError || !cliente) {
-      return {
-        success: false,
-        error: clienteError?.message || 'Erro ao criar cliente',
-      };
+      if (clienteExistente) {
+        // Atualizar cliente existente com dados do formulário
+        clienteId = clienteExistente.id;
+        
+        const dadosAtualizacao: any = {};
+        
+        // Sincronizar dados: atualizar apenas campos que estão vazios no cliente
+        if (!clienteExistente.nome && dados.nome_completo) {
+          dadosAtualizacao.nome = dados.nome_completo;
+        }
+        if (!clienteExistente.email && dados.email) {
+          dadosAtualizacao.email = dados.email;
+        }
+        if (!clienteExistente.whatsapp && dados.whatsapp) {
+          dadosAtualizacao.whatsapp = dados.whatsapp;
+        }
+        if (!clienteExistente.instagram && dados.instagram) {
+          dadosAtualizacao.instagram = dados.instagram;
+        }
+        if (!clienteExistente.endereco_completo && dados.endereco_completo) {
+          dadosAtualizacao.endereco_completo = dados.endereco_completo;
+        }
+        
+        // Atualizar dados que vieram do formulário (sobrescrever se necessário)
+        if (dados.nome_completo) dadosAtualizacao.nome = dados.nome_completo;
+        if (dados.email) dadosAtualizacao.email = dados.email;
+        if (dados.whatsapp) dadosAtualizacao.whatsapp = dados.whatsapp;
+        if (dados.instagram) dadosAtualizacao.instagram = dados.instagram;
+        if (dados.endereco_completo) dadosAtualizacao.endereco_completo = dados.endereco_completo;
+        
+        // Atualizar cliente existente
+        const { error: updateError } = await supabase
+          .from('clientes')
+          .update(dadosAtualizacao)
+          .eq('id', clienteId);
+          
+        if (updateError) {
+          console.error('Erro ao atualizar cliente:', updateError);
+        }
+      } else {
+        // Criar novo cliente
+        const { data: novoCliente, error: clienteError } = await supabase
+          .from('clientes')
+          .insert({
+            nome: dados.nome_completo,
+            email: dados.email || '',
+            whatsapp: dados.whatsapp || '',
+            instagram: dados.instagram || '',
+            endereco_completo: dados.endereco_completo || '',
+            status_programa: 'ativo',
+            is_lead: true,
+            user_id: userId,
+          })
+          .select()
+          .single();
+
+        if (clienteError || !novoCliente) {
+          return {
+            success: false,
+            error: clienteError?.message || 'Erro ao criar cliente',
+          };
+        }
+        
+        clienteId = novoCliente.id;
+      }
+    } else {
+      // Se não tem email nem whatsapp, criar novo cliente
+      const { data: novoCliente, error: clienteError } = await supabase
+        .from('clientes')
+        .insert({
+          nome: dados.nome_completo,
+          email: '',
+          whatsapp: '',
+          instagram: dados.instagram || '',
+          endereco_completo: dados.endereco_completo || '',
+          status_programa: 'ativo',
+          is_lead: true,
+          user_id: userId,
+        })
+        .select()
+        .single();
+
+      if (clienteError || !novoCliente) {
+        return {
+          success: false,
+          error: clienteError?.message || 'Erro ao criar cliente',
+        };
+      }
+      
+      clienteId = novoCliente.id;
     }
 
-    // 3. Criar formulário de pré-consulta
-    const { error: formularioError } = await supabase
+    // 3. Verificar se formulário já existe para este cliente
+    const { data: formularioExistente } = await supabase
       .from('formularios_pre_consulta')
-      .insert({
+      .select('id')
+      .eq('cliente_id', clienteId)
+      .maybeSingle();
+
+    // 4. Criar ou atualizar formulário de pré-consulta
+    const dadosFormulario = {
+      cliente_id: clienteId,
+      nome_completo: dados.nome_completo,
+      idade: dados.idade,
+      altura: dados.altura,
+      peso_atual: dados.peso_atual,
+      peso_desejado: dados.peso_desejado,
+      conheceu_programa: dados.conheceu_programa,
+      trabalho: dados.trabalho,
+      horario_trabalho: dados.horario_trabalho,
+      dias_trabalho: dados.dias_trabalho,
+      hora_acorda: dados.hora_acorda,
+      hora_dorme: dados.hora_dorme,
+      qualidade_sono: dados.qualidade_sono,
+      casada: dados.casada,
+      filhos: dados.filhos,
+      nomes_idades_filhos: dados.nomes_idades_filhos,
+      condicao_saude: dados.condicao_saude,
+      uso_medicacao: dados.uso_medicacao,
+      medicacao_qual: dados.medicacao_qual,
+      restricao_alimentar: dados.restricao_alimentar,
+      usa_suplemento: dados.usa_suplemento,
+      quais_suplementos: dados.quais_suplementos,
+      sente_dor: dados.sente_dor,
+      onde_dor: dados.onde_dor,
+      cafe_manha: dados.cafe_manha,
+      lanche_manha: dados.lanche_manha,
+      almoco: dados.almoco,
+      lanche_tarde: dados.lanche_tarde,
+      jantar: dados.jantar,
+      ceia: dados.ceia,
+      alcool_freq: dados.alcool_freq,
+      consumo_agua: dados.consumo_agua,
+      intestino_vezes_semana: dados.intestino_vezes_semana,
+      atividade_fisica: dados.atividade_fisica,
+      refeicao_dificil: dados.refeicao_dificil,
+      belisca_quando: dados.belisca_quando,
+      muda_fins_semana: dados.muda_fins_semana,
+      escala_cuidado: dados.escala_cuidado,
+      data_preenchimento: new Date().toISOString(),
+    };
+
+    let formularioError;
+    
+    if (formularioExistente) {
+      // Atualizar formulário existente (mesclar dados: manter o que já existe, adicionar novos)
+      const { error } = await supabase
+        .from('formularios_pre_consulta')
+        .update(dadosFormulario)
+        .eq('id', formularioExistente.id);
+      formularioError = error;
+    } else {
+      // Criar novo formulário
+      const { error } = await supabase
+        .from('formularios_pre_consulta')
+        .insert(dadosFormulario);
+      formularioError = error;
+    }
+
+    if (formularioError) {
         cliente_id: cliente.id,
         nome_completo: dados.nome_completo,
         idade: dados.idade,
@@ -182,7 +332,7 @@ export async function salvarFormularioPublico(
       });
 
     if (formularioError) {
-      await supabase.from('clientes').delete().eq('id', cliente.id);
+      // Não deletar cliente se formulário falhar - pode ser atualização
       return {
         success: false,
         error: formularioError.message || 'Erro ao salvar formulário',
@@ -191,7 +341,7 @@ export async function salvarFormularioPublico(
 
     return {
       success: true,
-      clienteId: cliente.id,
+      clienteId: clienteId,
     };
   } catch (error: any) {
     console.error('Erro ao salvar formulário público:', error);
