@@ -12,13 +12,13 @@ interface EditarInformacoesBasicasModalProps {
 
 export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente }: EditarInformacoesBasicasModalProps) {
   const [formData, setFormData] = useState({
-    nome: cliente?.nome || '',
+    nome: cliente?.nome || cliente?.formulario?.nome_completo || '',
     email: cliente?.email || '',
     telefone: cliente?.telefone || '',
-    whatsapp: cliente?.whatsapp || '',
-    instagram: cliente?.instagram || '',
+    whatsapp: cliente?.whatsapp || cliente?.formulario?.whatsapp || '',
+    instagram: cliente?.instagram || cliente?.formulario?.instagram || '',
     pais_telefone: '+55',
-    endereco_completo: '',
+    endereco_completo: cliente?.endereco_completo || cliente?.formulario?.endereco_completo || '',
     pais: 'Brasil',
     estado: '',
     cidade: '',
