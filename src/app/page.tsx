@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
-import ClientList from '@/components/ClientList';
-import TrelloView from '@/components/TrelloView';
+import ClientesView from '@/components/ClientesView';
 import AvaliacoesView from '@/components/AvaliacoesView';
 import GerenciarLinksFormulario from '@/components/GerenciarLinksFormulario';
 import MeuLinkFormulario from '@/components/MeuLinkFormulario';
@@ -47,8 +46,7 @@ export default function Home() {
       
       <div className="pt-16 md:pt-20">
         {view === 'dashboard' && <Dashboard sidebarOpen={sidebarOpen} setView={setView} />}
-        {view === 'clientes' && <ClientList sidebarOpen={sidebarOpen} />}
-        {view === 'trello' && <TrelloView sidebarOpen={sidebarOpen} />}
+        {(view === 'clientes' || view === 'trello') && <ClientesView sidebarOpen={sidebarOpen} />}
         {/* {view === 'agenda' && <AgendaView sidebarOpen={sidebarOpen} />} */}
         {view === 'avaliacoes' && <AvaliacoesView sidebarOpen={sidebarOpen} />}
         {view === 'links-formulario' && (

@@ -85,12 +85,30 @@ export async function getKanbanColumns(): Promise<Column[]> {
     if (error) throw error;
 
     if (!data || data.length === 0) {
+      console.log('📋 Nenhuma coluna encontrada. Criando colunas padrão...');
       // Criar colunas padrão
       const defaultColumns = await createDefaultColumns();
       return defaultColumns;
     }
 
-    return data.map(col => ({
+    // Verificar se há colunas duplicadas e filtrar
+    const colunasUnicas = new Map<string, KanbanColumn>();
+    for (const col of data) {
+      const nomeLower = col.nome.toLowerCase().trim();
+      // Se já existe uma coluna com o mesmo nome (case-insensitive), manter apenas a primeira
+      const jaExiste = Array.from(colunasUnicas.values()).some(c => 
+        c.nome.toLowerCase().trim() === nomeLower
+      );
+      if (!jaExiste) {
+        colunasUnicas.set(col.id, col);
+      } else {
+        console.log(`⚠️ Coluna duplicada removida: ${col.nome} (ID: ${col.id})`);
+      }
+    }
+
+    const colunasFiltradas = Array.from(colunasUnicas.values());
+
+    return colunasFiltradas.map(col => ({
       id: col.id,
       nome: col.nome,
       cor: col.cor,
@@ -121,14 +139,53 @@ async function createDefaultColumns(): Promise<Column[]> {
       return [];
     }
 
+    // Verificar se já existem colunas padrão para evitar duplicação
+    const { data: colunasExistentes } = await supabase
+      .from('kanban_colunas')
+      .select('nome')
+      .eq('user_id', userId);
+    
+    const nomesExistentes = new Set(
+      (colunasExistentes || []).map(c => c.nome.toLowerCase().trim())
+    );
+
+    const colunasParaCriar = [];
+    
+    if (!nomesExistentes.has('ativo') && !nomesExistentes.has('✅ ativo')) {
+      colunasParaCriar.push({ nome: '✅ Ativo', cor: 'green', ordem: 1, clientes_ids: [], user_id: userId });
+    }
+    if (!nomesExistentes.has('inativo') && !nomesExistentes.has('❌ inativo')) {
+      colunasParaCriar.push({ nome: '❌ Inativo', cor: 'red', ordem: 2, clientes_ids: [], user_id: userId });
+    }
+    if (!nomesExistentes.has('pausado') && !nomesExistentes.has('⏸️ pausado') && !nomesExistentes.has('⏸ pausado')) {
+      colunasParaCriar.push({ nome: '⏸️ Pausado', cor: 'yellow', ordem: 3, clientes_ids: [], user_id: userId });
+    }
+
+    if (colunasParaCriar.length === 0) {
+      console.log('✅ Colunas padrão já existem. Retornando existentes...');
+      // Buscar e retornar colunas existentes
+      const { data: dataExistentes, error: errorExistentes } = await supabase
+        .from('kanban_colunas')
+        .select('*')
+        .eq('user_id', userId)
+        .order('ordem', { ascending: true });
+      
+      if (errorExistentes) throw errorExistentes;
+      
+      return (dataExistentes || []).map(col => ({
+        id: col.id,
+        nome: col.nome,
+        cor: col.cor,
+        clientes: col.clientes_ids || [],
+      }));
+    }
+
+    console.log(`📋 Criando ${colunasParaCriar.length} colunas padrão...`);
+
     // Criar colunas padrão associadas ao usuário atual
     const { data, error } = await supabase
       .from('kanban_colunas')
-      .insert([
-        { nome: '✅ Ativo', cor: 'green', ordem: 1, clientes_ids: [], user_id: userId },
-        { nome: '❌ Inativo', cor: 'red', ordem: 2, clientes_ids: [], user_id: userId },
-        { nome: '⏸️ Pausado', cor: 'yellow', ordem: 3, clientes_ids: [], user_id: userId },
-      ])
+      .insert(colunasParaCriar)
       .select();
 
     if (error) throw error;
@@ -381,10 +438,46 @@ export async function associarClientesPorStatus() {
         continue;
       }
 
-      // Verificar se cliente já está na coluna
-      if (colunaCorreta.clientes.includes(cliente.id)) {
+      // Verificar se cliente já está nesta coluna
+      const clienteIdStr = String(cliente.id);
+      const jaEstaNestaColuna = colunaCorreta.clientes.some(id => String(id) === clienteIdStr);
+      
+      if (jaEstaNestaColuna) {
         console.log(`✓ Cliente ${cliente.nome} já está na coluna ${colunaCorreta.nome}`);
         continue;
+      }
+
+      // Verificar se cliente está em OUTRA coluna de status e remover primeiro
+      for (const col of colunas) {
+        if (col.id !== colunaCorreta.id) {
+          const nomeColLower = col.nome.toLowerCase().trim();
+          const temStatus = nomeColLower.includes('ativo') || nomeColLower.includes('inativo') || nomeColLower.includes('pausado');
+          if (temStatus && col.clientes.some(id => String(id) === clienteIdStr)) {
+            // Remover de outra coluna
+            try {
+              const { supabase } = await import('../lib/supabase');
+              const { data: colData } = await supabase
+                .from('kanban_colunas')
+                .select('clientes_ids')
+                .eq('id', col.id)
+                .single();
+              
+              if (colData) {
+                const novosIds = (colData.clientes_ids || [])
+                  .filter((id: string) => String(id) !== clienteIdStr);
+                
+                await supabase
+                  .from('kanban_colunas')
+                  .update({ clientes_ids: novosIds })
+                  .eq('id', col.id);
+                
+                console.log(`🗑️ Cliente ${cliente.nome} removido da coluna ${col.nome}`);
+              }
+            } catch (error) {
+              console.error(`Erro ao remover de ${col.nome}:`, error);
+            }
+          }
+        }
       }
 
       console.log(`➕ Adicionando cliente ${cliente.nome} (${cliente.id}) à coluna ${colunaCorreta.nome} (${colunaCorreta.id})`);
@@ -401,6 +494,101 @@ export async function associarClientesPorStatus() {
   } catch (error) {
     console.error('❌ Erro ao associar clientes por status:', error);
     throw error;
+  }
+}
+
+// Limpar clientes duplicados das colunas de status
+// Garante que cada cliente apareça apenas em UMA coluna de status por vez
+export async function limparDuplicatasColunasStatus() {
+  if (!isSupabaseConnected()) {
+    console.warn('⚠️ Supabase não configurado.');
+    return;
+  }
+
+  try {
+    const { supabase } = await import('../lib/supabase');
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.warn('Usuário não autenticado.');
+      return;
+    }
+
+    console.log('🧹 Limpando clientes duplicados das colunas...');
+
+    // Buscar todas as colunas do usuário
+    const colunas = await getKanbanColumns();
+    
+    // Identificar colunas de status
+    const colunasStatus = colunas.filter(col => {
+      const nomeLower = col.nome.toLowerCase().trim();
+      return nomeLower.includes('ativo') || nomeLower.includes('inativo') || nomeLower.includes('pausado');
+    });
+
+    // Criar mapa: cliente_id -> colunas onde ele aparece
+    const clienteParaColunas = new Map<string, string[]>();
+    
+    colunasStatus.forEach(coluna => {
+      coluna.clientes.forEach(clienteId => {
+        const idStr = String(clienteId);
+        if (!clienteParaColunas.has(idStr)) {
+          clienteParaColunas.set(idStr, []);
+        }
+        clienteParaColunas.get(idStr)!.push(coluna.id);
+      });
+    });
+
+    // Encontrar duplicatas (clientes em múltiplas colunas de status)
+    const duplicatas: Array<{ clienteId: string; colunas: string[] }> = [];
+    clienteParaColunas.forEach((colunasIds, clienteId) => {
+      if (colunasIds.length > 1) {
+        duplicatas.push({ clienteId, colunas: colunasIds });
+      }
+    });
+
+    if (duplicatas.length === 0) {
+      console.log('✅ Nenhuma duplicata encontrada.');
+      return;
+    }
+
+    console.log(`⚠️ Encontradas ${duplicatas.length} duplicatas. Removendo...`);
+
+    // Para cada duplicata, manter apenas na primeira coluna (ordem alfabética do nome da coluna)
+    for (const dup of duplicatas) {
+      // Ordenar colunas por nome para manter na primeira
+      const colunasOrdenadas = dup.colunas.sort((a, b) => {
+        const colA = colunasStatus.find(c => c.id === a);
+        const colB = colunasStatus.find(c => c.id === b);
+        return (colA?.nome || '').localeCompare(colB?.nome || '');
+      });
+
+      const colunaManter = colunasOrdenadas[0];
+      const colunasRemover = colunasOrdenadas.slice(1);
+
+      // Remover das outras colunas
+      for (const colunaId of colunasRemover) {
+        const coluna = colunasStatus.find(c => c.id === colunaId);
+        if (coluna) {
+          const novosIds = coluna.clientes.filter(id => String(id) !== dup.clienteId);
+          
+          const { error } = await supabase
+            .from('kanban_colunas')
+            .update({ clientes_ids: novosIds })
+            .eq('id', colunaId);
+
+          if (error) {
+            console.error(`❌ Erro ao remover duplicata de ${coluna.nome}:`, error);
+          } else {
+            console.log(`✅ Cliente ${dup.clienteId} removido da coluna ${coluna.nome}`);
+          }
+        }
+      }
+    }
+
+    console.log(`✅ Limpeza concluída! ${duplicatas.length} duplicatas removidas.`);
+  } catch (error) {
+    console.error('❌ Erro ao limpar duplicatas:', error);
   }
 }
 

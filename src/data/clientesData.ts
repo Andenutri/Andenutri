@@ -56,22 +56,127 @@ export async function getAllClientes(): Promise<ClienteComFormulario[]> {
       return [];
     }
 
-    // Buscar apenas clientes do usuário atual
-    let query = supabase
+    // Buscar clientes
+    const { data: clientesData, error } = await supabase
       .from('clientes')
       .select('*')
       .eq('user_id', userId)
       .order('data_criacao', { ascending: false });
 
-    const { data, error } = await query;
-
     if (error) {
       console.error('Erro ao buscar clientes do Supabase:', error);
-      // Retorna vazio em caso de erro (não mock, para garantir isolamento)
       return [];
     }
 
-    return data || [];
+    if (!clientesData || clientesData.length === 0) {
+      return [];
+    }
+
+    // Buscar formulários e avaliações para todos os clientes
+    const clientesIds = clientesData.map(c => c.id);
+    
+    // Buscar formulários apenas dos clientes do usuário atual
+    const { data: formulariosData, error: formulariosError } = await supabase
+      .from('formularios_pre_consulta')
+      .select('*')
+      .in('cliente_id', clientesIds);
+    
+    if (formulariosError) {
+      console.error('⚠️ Erro ao buscar formulários:', formulariosError);
+    }
+    
+    // Buscar avaliações emocionais apenas dos clientes do usuário atual
+    const { data: avaliacoesEmocionaisData, error: avaliacoesError } = await supabase
+      .from('avaliacoes_emocionais')
+      .select('cliente_id')
+      .in('cliente_id', clientesIds);
+    
+    if (avaliacoesError) {
+      console.error('⚠️ Erro ao buscar avaliações emocionais:', avaliacoesError);
+    }
+    
+    console.log(`📋 Formulários encontrados: ${(formulariosData || []).length}`);
+    console.log(`📊 Avaliações encontradas: ${(avaliacoesEmocionaisData || []).length}`);
+
+    // Criar mapas para acesso rápido
+    const formulariosMap = new Map();
+    (formulariosData || []).forEach(form => {
+      formulariosMap.set(form.cliente_id, form);
+    });
+    
+    const clientesComAvaliacao = new Set(
+      (avaliacoesEmocionaisData || []).map(av => av.cliente_id)
+    );
+
+    // Normalizar dados: converter status_programa e calcular formulario_preenchido/avaliacao_feita
+    const clientesNormalizados = clientesData.map((cliente: any) => {
+      // Verificar se tem formulário preenchido
+      const formulario = formulariosMap.get(cliente.id);
+      const temFormulario = !!formulario;
+      
+      // Verificar se tem avaliação emocional feita
+      const temAvaliacaoEmocional = clientesComAvaliacao.has(cliente.id);
+
+      return {
+        ...cliente,
+        status_plano: cliente.status_programa || cliente.status_plano || 'ativo',
+        formulario_preenchido: temFormulario, // Calcular dinamicamente
+        avaliacao_feita: temAvaliacaoEmocional, // Calcular dinamicamente
+        formulario: formulario ? {
+          nome_completo: formulario.nome_completo || '',
+          endereco_completo: formulario.endereco_completo || cliente.endereco_completo || '',
+          whatsapp: cliente.whatsapp || '',
+          instagram: cliente.instagram || '',
+          idade: formulario.idade || '',
+          altura: formulario.altura || '',
+          peso_atual: formulario.peso_atual || '',
+          peso_desejado: formulario.peso_desejado || '',
+          conheceu_programa: formulario.conheceu_programa || '',
+          trabalho: formulario.trabalho || '',
+          horario_trabalho: formulario.horario_trabalho || '',
+          dias_trabalho: formulario.dias_trabalho || '',
+          hora_acorda: formulario.hora_acorda || '',
+          hora_dorme: formulario.hora_dorme || '',
+          qualidade_sono: formulario.qualidade_sono || '',
+          casada: formulario.casada || '',
+          filhos: formulario.filhos || '',
+          nomes_idades_filhos: formulario.nomes_idades_filhos || '',
+          condicao_saude: formulario.condicao_saude || '',
+          uso_medicacao: formulario.uso_medicacao || '',
+          medicacao_qual: formulario.medicacao_qual || '',
+          restricao_alimentar: formulario.restricao_alimentar || '',
+          usa_suplemento: formulario.usa_suplemento || '',
+          quais_suplementos: formulario.quais_suplementos || '',
+          sente_dor: formulario.sente_dor || '',
+          onde_dor: formulario.onde_dor || '',
+          cafe_manha: formulario.cafe_manha || '',
+          lanche_manha: formulario.lanche_manha || '',
+          almoco: formulario.almoco || '',
+          lanche_tarde: formulario.lanche_tarde || '',
+          jantar: formulario.jantar || '',
+          ceia: formulario.ceia || '',
+          alcool_freq: formulario.alcool_freq || '',
+          consumo_agua: formulario.consumo_agua || '',
+          intestino_vezes_semana: formulario.intestino_vezes_semana || '',
+          atividade_fisica: formulario.atividade_fisica || '',
+          refeicao_dificil: formulario.refeicao_dificil || '',
+          belisca_quando: formulario.belisca_quando || '',
+          muda_fins_semana: formulario.muda_fins_semana || '',
+          escala_cuidado: formulario.escala_cuidado || '',
+          data_preenchimento: formulario.data_preenchimento || formulario.data_criacao || '',
+        } : undefined,
+      };
+    });
+
+    console.log(`✅ Carregados ${clientesNormalizados.length} clientes do Supabase`);
+    const clientesComFormulario = clientesNormalizados.filter(c => c.formulario_preenchido);
+    console.log(`📋 Clientes com formulário preenchido: ${clientesComFormulario.length}`);
+    
+    if (clientesComFormulario.length > 0) {
+      console.log('📝 Nomes dos clientes com formulário:', clientesComFormulario.map(c => c.nome));
+    }
+
+    return clientesNormalizados;
   } catch (error) {
     console.error('Erro ao importar Supabase:', error);
     return [];
@@ -310,13 +415,13 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
           .update(dadosAtualizacao)
           .eq('id', clienteExistenteId)
           .eq('user_id', userId)
-          .select()
-          .single();
+        .select()
+        .single();
 
-        if (error) throw error;
+      if (error) throw error;
         
         alert('✅ Cliente atualizado! Encontramos um cliente similar e atualizamos os dados.');
-        return data;
+      return data;
       }
 
       // Validar campos obrigatórios antes de criar

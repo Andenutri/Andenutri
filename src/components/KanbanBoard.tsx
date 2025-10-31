@@ -4,24 +4,44 @@ import { useState, useEffect } from 'react';
 import { getAllClientes, ClienteComFormulario } from '@/data/clientesData';
 import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
-import { syncAllColumns, Column, getKanbanColumns, saveKanbanColumn, associarClientesPorStatus } from '@/data/kanbanData';
+import { syncAllColumns, Column, getKanbanColumns, saveKanbanColumn, associarClientesPorStatus, limparDuplicatasColunasStatus } from '@/data/kanbanData';
 
-export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
+interface KanbanBoardProps {
+  sidebarOpen: boolean;
+  clientesExternos?: ClienteComFormulario[]; // Clientes passados do componente pai (opcional)
+  onClientesChange?: () => void; // Callback para notificar mudanças
+  searchQuery?: string; // Query de busca para filtrar clientes
+}
+
+export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesChange, searchQuery = '' }: KanbanBoardProps) {
   const [allClientes, setAllClientes] = useState<ClienteComFormulario[]>([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
   const [columns, setColumns] = useState<Column[]>([]);
   const [loadingColumns, setLoadingColumns] = useState(true);
 
-  // Carregar clientes e colunas do Supabase
+  // Se clientes foram passados externamente, usar eles (sincronização automática)
+  useEffect(() => {
+    if (clientesExternos !== undefined) {
+      setAllClientes(clientesExternos);
+      setLoadingClientes(false);
+    }
+  }, [clientesExternos]);
+
+  // Carregar clientes e colunas do Supabase (apenas se não foram passados externamente)
   useEffect(() => {
     async function loadData() {
-      setLoadingClientes(true);
-      setLoadingColumns(true);
-      
-      // Carregar clientes
-      const clientesData = await getAllClientes();
-      setAllClientes(clientesData);
-      setLoadingClientes(false);
+      // Se já temos clientes externos, pular carregamento
+      if (clientesExternos !== undefined) {
+        setLoadingColumns(true);
+      } else {
+        setLoadingClientes(true);
+        setLoadingColumns(true);
+        
+        // Carregar clientes apenas se não foram passados externamente
+        const clientesData = await getAllClientes();
+        setAllClientes(clientesData);
+        setLoadingClientes(false);
+      }
       
       // Carregar colunas do Kanban
       const colunasData = await getKanbanColumns();
@@ -37,7 +57,8 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
         setTimeout(async () => {
           const colunasRecarregadas = await getKanbanColumns();
           setColumns(colunasRecarregadas);
-          await associarTodosClientesAsColunas(clientesData, colunasRecarregadas);
+          const clientesParaAssociar = clientesExternos || allClientes;
+          await associarTodosClientesAsColunas(clientesParaAssociar, colunasRecarregadas);
           const colunasFinais = await getKanbanColumns();
           setColumns(colunasFinais);
         }, 1000);
@@ -47,44 +68,90 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
       setColumns(colunasData);
       setLoadingColumns(false);
       
-      // Associar TODOS os clientes às colunas automaticamente
-      await associarTodosClientesAsColunas(clientesData, colunasData);
+      // LIMPAR DUPLICATAS PRIMEIRO (clientes que estão em múltiplas colunas)
+      console.log('🧹 Limpando duplicatas antes de associar clientes...');
+      await limparDuplicatasColunasStatus();
       
-      // Recarregar colunas após associação
+      // Recarregar colunas após limpeza
+      const colunasLimpas = await getKanbanColumns();
+      setColumns(colunasLimpas);
+      
+      // Associar TODOS os clientes às colunas automaticamente
+      const clientesParaAssociar = clientesExternos || clientesData;
+      console.log('🔄 Iniciando associação de clientes...');
+      await associarTodosClientesAsColunas(clientesParaAssociar, colunasLimpas);
+      
+      // Aguardar um pouco para garantir que o Supabase processou
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Recarregar colunas após associação para exibir clientes atualizados
+      console.log('🔄 Recarregando colunas após associação...');
       const colunasAtualizadas = await getKanbanColumns();
+      console.log('📋 Colunas recarregadas:', colunasAtualizadas.map(c => ({
+        nome: c.nome,
+        totalClientes: c.clientes.length,
+        ids: c.clientes
+      })));
       setColumns(colunasAtualizadas);
     }
     loadData();
-  }, []);
+  }, [clientesExternos]);
 
   // Função para associar todos os clientes às colunas
   async function associarTodosClientesAsColunas(clientes: ClienteComFormulario[], colunas: Column[]) {
     if (!clientes || clientes.length === 0 || !colunas || colunas.length === 0) {
-      console.log('Nenhum cliente ou coluna para associar');
+      console.log('⚠️ Nenhum cliente ou coluna para associar');
       return;
     }
 
     console.log(`🔄 Associando ${clientes.length} clientes a ${colunas.length} colunas...`);
 
-    // Mapear nomes de colunas para status
+    // Mapear nomes de colunas para status (evitar duplicatas - pegar apenas a primeira coluna de cada tipo)
     const mapaStatusColuna: Record<string, string> = {};
+    const tiposProcessados = new Set<string>();
+    
     for (const coluna of colunas) {
-      const nomeLower = coluna.nome.toLowerCase();
-      if (nomeLower.includes('ativo')) {
+      const nomeLower = coluna.nome.toLowerCase().trim();
+      if (nomeLower.includes('ativo') && !tiposProcessados.has('ativo')) {
         mapaStatusColuna['ativo'] = coluna.id;
-      } else if (nomeLower.includes('inativo')) {
+        tiposProcessados.add('ativo');
+        console.log(`✓ Mapeando 'ativo' → ${coluna.nome} (${coluna.id})`);
+      } else if (nomeLower.includes('inativo') && !tiposProcessados.has('inativo')) {
         mapaStatusColuna['inativo'] = coluna.id;
-      } else if (nomeLower.includes('pausado') || nomeLower.includes('pausa')) {
+        tiposProcessados.add('inativo');
+        console.log(`✓ Mapeando 'inativo' → ${coluna.nome} (${coluna.id})`);
+      } else if ((nomeLower.includes('pausado') || nomeLower.includes('pausa')) && !tiposProcessados.has('pausado')) {
         mapaStatusColuna['pausado'] = coluna.id;
+        tiposProcessados.add('pausado');
+        console.log(`✓ Mapeando 'pausado' → ${coluna.nome} (${coluna.id})`);
       }
     }
 
-    console.log('📋 Mapa de status → colunas:', mapaStatusColuna);
+    console.log('📋 Mapa final de status → colunas:', mapaStatusColuna);
 
-    // Para cada cliente, adicionar à coluna correspondente
+    let clientesAdicionados = 0;
+    let clientesJaNaColuna = 0;
+
+      // Para cada cliente, adicionar à coluna correspondente
     for (const cliente of clientes) {
-      const status = cliente.status_plano?.toLowerCase()?.trim();
-      if (!status) continue;
+      // Suporta tanto status_plano quanto status_programa (para compatibilidade)
+      const status = (cliente.status_plano || (cliente as any).status_programa)?.toLowerCase()?.trim();
+      if (!status) {
+        console.log(`⚠️ Cliente ${cliente.nome} não tem status_plano/status_programa definido. Usando 'ativo' como padrão.`);
+        // Se não tiver status, adicionar à coluna "Ativo" por padrão
+        const colunaAtivo = colunas.find(c => c.nome.toLowerCase().includes('ativo'));
+        if (colunaAtivo) {
+          try {
+            const { addClientToColumn } = await import('@/data/kanbanData');
+            await addClientToColumn(colunaAtivo.id, cliente.id);
+            console.log(`✅ Cliente ${cliente.nome} (sem status) adicionado à coluna ${colunaAtivo.nome}`);
+            clientesAdicionados++;
+          } catch (error) {
+            console.error(`❌ Erro ao adicionar ${cliente.nome}:`, error);
+          }
+        }
+        continue;
+      }
 
       const columnId = mapaStatusColuna[status];
       if (!columnId) {
@@ -92,10 +159,20 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
         continue;
       }
 
-      // Verificar se já está na coluna
-      const coluna = colunas.find(c => c.id === columnId);
-      if (coluna && coluna.clientes.includes(cliente.id)) {
-        console.log(`✓ Cliente ${cliente.nome} já está na coluna ${coluna.nome}`);
+      // Buscar coluna atualizada do Supabase para verificar se já está lá
+      const colunaAtual = colunas.find(c => c.id === columnId);
+      if (!colunaAtual) {
+        console.log(`⚠️ Coluna ${columnId} não encontrada`);
+        continue;
+      }
+
+      // Verificar se já está na coluna (comparar IDs como string)
+      const clienteIdStr = String(cliente.id);
+      const jaEstaNaColuna = colunaAtual.clientes.some(id => String(id) === clienteIdStr);
+      
+      if (jaEstaNaColuna) {
+        console.log(`✓ Cliente ${cliente.nome} já está na coluna ${colunaAtual.nome}`);
+        clientesJaNaColuna++;
         continue;
       }
 
@@ -103,13 +180,14 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
       try {
         const { addClientToColumn } = await import('@/data/kanbanData');
         await addClientToColumn(columnId, cliente.id);
-        console.log(`✅ Cliente ${cliente.nome} adicionado à coluna ${coluna?.nome}`);
+        console.log(`✅ Cliente ${cliente.nome} (${cliente.id}) adicionado à coluna ${colunaAtual.nome}`);
+        clientesAdicionados++;
       } catch (error) {
         console.error(`❌ Erro ao adicionar ${cliente.nome}:`, error);
       }
     }
 
-    console.log('✅ Associação concluída!');
+    console.log(`✅ Associação concluída! ${clientesAdicionados} adicionados, ${clientesJaNaColuna} já estavam nas colunas.`);
   }
 
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
@@ -119,21 +197,10 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [showClientModal, setShowClientModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
   const [newColumnData, setNewColumnData] = useState({ nome: '', cor: 'purple' });
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedColumnForClient, setSelectedColumnForClient] = useState<string | null>(null);
 
-  // Sincronizar colunas com Supabase quando mudarem
-  useEffect(() => {
-    const timer = setTimeout(async () => {
-      try {
-        await syncAllColumns(columns);
-      } catch (error) {
-        console.error('Erro ao sincronizar colunas:', error);
-      }
-    }, 1000); // Debounce de 1 segundo
-
-    return () => clearTimeout(timer);
-  }, [columns]);
+  // REMOVIDO: syncAllColumns estava causando duplicação e loops infinitos
+  // A sincronização agora é feita apenas quando necessário (criar/atualizar coluna)
 
   const cores = [
     { id: 'green', nome: 'Verde', classe: 'bg-green-100 border-green-300 text-green-800' },
@@ -236,31 +303,6 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
             </button>
           </div>
         </div>
-
-        {/* Barra de Busca */}
-        <div className="mt-4 px-4 md:px-8">
-          <div className="bg-white rounded-lg border-2 border-amber-200 p-3 md:p-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="🔍 Buscar por nome, status, lead, herbalife..."
-                  className="w-full px-4 py-2 md:py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none text-sm md:text-base"
-                />
-              </div>
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="px-4 py-2 md:py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-semibold text-sm md:text-base whitespace-nowrap"
-                >
-                  🗑️ Limpar
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Board Mobile-First */}
@@ -270,36 +312,136 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
           <div className="flex gap-4 md:gap-6">
             {columns.map((column) => {
               const classeCor = getCoresByColumn(column.cor);
-              // Converter IDs de string para UUID se necessário e filtrar clientes válidos
-              let clientesNaColuna = column.clientes
-                .map(id => {
-                  const cliente = getClienteById(id);
-                  return cliente;
-                })
-                .filter((cliente): cliente is ClienteComFormulario => cliente !== undefined && cliente !== null);
               
-              // Log para debug
-              if (process.env.NODE_ENV === 'development') {
-                console.log(`Coluna ${column.nome}:`, {
-                  totalIds: column.clientes.length,
-                  clientesEncontrados: clientesNaColuna.length,
-                  ids: column.clientes,
-                  todosClientes: allClientes.map(c => ({ id: c.id, nome: c.nome }))
+              // DETERMINAR STATUS ESPERADO DA COLUNA BASEADO NO NOME
+              // Isso garante sincronização: Trello mostra os MESMOS clientes que a Lista, apenas organizados
+              const nomeColunaLower = column.nome.toLowerCase().trim();
+              let statusEsperado: string | null = null;
+              
+              if (nomeColunaLower.includes('ativo')) {
+                statusEsperado = 'ativo';
+              } else if (nomeColunaLower.includes('inativo')) {
+                statusEsperado = 'inativo';
+              } else if (nomeColunaLower.includes('pausado') || nomeColunaLower.includes('pausa')) {
+                statusEsperado = 'pausado';
+              }
+
+              // Se a coluna tem um status correspondente, mostrar TODOS os clientes com esse status
+              // (igual à Lista, mas organizado em colunas)
+              // Se não tiver status correspondente, mostrar apenas clientes salvos manualmente na coluna
+              let clientesNaColuna: ClienteComFormulario[] = [];
+              
+              if (statusEsperado) {
+                // Coluna com status: mostrar TODOS os clientes com esse status (sincronizado com Lista)
+                // MAS: Remover clientes que já estão em OUTRAS colunas de status (evitar duplicatas)
+                const clientesComStatus = allClientes.filter(c => {
+                  const statusCliente = (c.status_plano || (c as any).status_programa)?.toLowerCase()?.trim();
+                  return statusCliente === statusEsperado;
                 });
+                
+                // Verificar quais clientes já estão em outras colunas de status
+                const idsEmOutrasColunas = new Set<string>();
+                columns.forEach(col => {
+                  if (col.id !== column.id) {
+                    const nomeColLower = col.nome.toLowerCase().trim();
+                    const temStatus = nomeColLower.includes('ativo') || nomeColLower.includes('inativo') || nomeColLower.includes('pausado');
+                    if (temStatus) {
+                      col.clientes.forEach(id => idsEmOutrasColunas.add(String(id)));
+                    }
+                  }
+                });
+                
+                // Filtrar: manter apenas clientes que NÃO estão em outras colunas de status
+                // OU que já estão nesta coluna (permitir movimento manual)
+                clientesNaColuna = clientesComStatus.filter(c => {
+                  const clienteIdStr = String(c.id);
+                  const jaEstaNestaColuna = column.clientes.some(id => String(id) === clienteIdStr);
+                  const estaEmOutraColuna = idsEmOutrasColunas.has(clienteIdStr);
+                  
+                  // Manter se já está nesta coluna OU se não está em nenhuma outra coluna de status
+                  return jaEstaNestaColuna || !estaEmOutraColuna;
+                });
+                
+                // Sincronizar com Supabase em background (adicionar à coluna se não estiver e remover de outras)
+                clientesNaColuna.forEach(async (c) => {
+                  const clienteIdStr = String(c.id);
+                  const jaEstaNoArray = column.clientes.some(id => String(id) === clienteIdStr);
+                  
+                  if (!jaEstaNoArray) {
+                    // Remover de outras colunas de status primeiro
+                    for (const col of columns) {
+                      if (col.id !== column.id) {
+                        const nomeColLower = col.nome.toLowerCase().trim();
+                        const temStatus = nomeColLower.includes('ativo') || nomeColLower.includes('inativo') || nomeColLower.includes('pausado');
+                        if (temStatus && col.clientes.some(id => String(id) === clienteIdStr)) {
+                          try {
+                            const { supabase } = await import('../lib/supabase');
+                            const { data: colunaData } = await supabase
+                              .from('kanban_colunas')
+                              .select('clientes_ids')
+                              .eq('id', col.id)
+                              .single();
+                            
+                            if (colunaData) {
+                              const novosIds = (colunaData.clientes_ids || [])
+                                .filter((id: string) => String(id) !== clienteIdStr);
+                              
+                              await supabase
+                                .from('kanban_colunas')
+                                .update({ clientes_ids: novosIds })
+                                .eq('id', col.id);
+                              
+                              console.log(`🗑️ Cliente ${c.nome} removido da coluna ${col.nome}`);
+                            }
+                          } catch (error) {
+                            console.error(`Erro ao remover cliente de ${col.nome}:`, error);
+                          }
+                        }
+                      }
+                    }
+                    
+                    // Adicionar à coluna correta
+                    try {
+                      const { addClientToColumn } = await import('@/data/kanbanData');
+                      await addClientToColumn(column.id, c.id);
+                      console.log(`✅ Cliente ${c.nome} sincronizado com coluna ${column.nome}`);
+                    } catch (error) {
+                      console.error(`Erro ao adicionar cliente à coluna:`, error);
+                    }
+                  }
+                });
+              } else {
+                // Coluna customizada (sem status correspondente): mostrar apenas clientes salvos manualmente
+                clientesNaColuna = column.clientes
+                  .map(columnClienteId => {
+                    const clienteEncontrado = allClientes.find(c => String(c.id) === String(columnClienteId));
+                    return clienteEncontrado;
+                  })
+                  .filter((cliente): cliente is ClienteComFormulario => cliente !== undefined && cliente !== null);
               }
               
-              // Filtrar por busca
+              // Log para debug
+              console.log(`📊 Coluna "${column.nome}" (${statusEsperado || 'customizada'}):`, {
+                totalClientes: clientesNaColuna.length,
+                nomes: clientesNaColuna.map(c => c.nome),
+                totalClientesDisponiveis: allClientes.length,
+                modo: statusEsperado ? 'baseado em status' : 'lista manual'
+              });
+              
+              // Filtrar por busca (usa searchQuery passado como prop)
               if (searchQuery) {
                 const query = searchQuery.toLowerCase().trim();
                 clientesNaColuna = clientesNaColuna.filter(cliente => {
-                  const nomeMatch = cliente.nome.toLowerCase().includes(query);
+                  const nomeMatch = cliente.nome?.toLowerCase().includes(query);
                   const statusMatch = cliente.status_plano?.toLowerCase().includes(query);
                   const emailMatch = cliente.email?.toLowerCase().includes(query);
+                  const telefoneMatch = cliente.telefone?.toLowerCase().includes(query);
+                  const whatsappMatch = cliente.whatsapp?.toLowerCase().includes(query);
                   const leadMatch = query.includes('lead') && (cliente as any).is_lead;
                   const herbalifeMatch = query.includes('herbalife') && (cliente as any).status_herbalife;
                   const indicacaoMatch = (cliente as any).indicado_por?.toLowerCase().includes(query);
                   
-                  return nomeMatch || statusMatch || emailMatch || leadMatch || herbalifeMatch || indicacaoMatch;
+                  return nomeMatch || statusMatch || emailMatch || telefoneMatch || whatsappMatch || leadMatch || herbalifeMatch || indicacaoMatch;
                 });
               }
 
@@ -494,9 +636,14 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
             
             // Recarregar clientes e colunas após salvar
             async function reloadData() {
-              // Recarregar clientes
-              const clientesData = await getAllClientes();
-              setAllClientes(clientesData);
+              // Recarregar clientes (se não vierem externos)
+              if (clientesExternos === undefined) {
+                const clientesData = await getAllClientes();
+                setAllClientes(clientesData);
+              } else {
+                // Se vem externo, notificar o componente pai para recarregar
+                onClientesChange?.();
+              }
               
               // Recarregar colunas (pode ter mudado se cliente foi adicionado a uma coluna)
               const colunasData = await getKanbanColumns();

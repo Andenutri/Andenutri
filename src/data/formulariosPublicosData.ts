@@ -297,6 +297,11 @@ export async function salvarFormularioPublico(
       };
     }
 
+    // 5. O campo formulario_preenchido é calculado dinamicamente em getAllClientes
+    // baseado na existência de um formulário na tabela formularios_pre_consulta
+    // Portanto, não precisamos atualizar nenhum campo adicional aqui
+    console.log(`✅ Formulário salvo para cliente ${clienteId}. Ele aparecerá automaticamente na lista "Aguardando Avaliação".`);
+
     return {
       success: true,
       clienteId: clienteId,

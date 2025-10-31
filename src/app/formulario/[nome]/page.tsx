@@ -216,13 +216,25 @@ export default function FormularioPublicoPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-          <div className="text-6xl mb-4">✅</div>
-          <h1 className="text-2xl font-bold text-green-700 mb-2">Formulário Enviado!</h1>
-          <p className="text-gray-600 mb-6">
-            Obrigado por preencher o formulário. Recebemos seus dados e {nutricionistaNome || 'o nutricionista'} entrará em contato em breve!
-          </p>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-2xl p-8 md:p-12 max-w-lg text-center animate-fade-in">
+          <div className="text-8xl mb-6 animate-bounce">🎉</div>
+          <h1 className="text-3xl md:text-4xl font-bold text-green-700 mb-4">
+            Parabéns! 🎊
+          </h1>
+          <h2 className="text-xl md:text-2xl font-semibold text-green-600 mb-4">
+            Seu formulário foi preenchido com sucesso!
+          </h2>
+          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-6">
+            <p className="text-gray-700 text-base md:text-lg leading-relaxed">
+              ✨ Obrigado por preencher o formulário de pré-consulta!<br />
+              📋 Recebemos todos os seus dados com sucesso.<br />
+              💚 {nutricionistaNome || 'O nutricionista'} entrará em contato em breve para dar continuidade ao seu acompanhamento!
+            </p>
+          </div>
+          <div className="text-sm text-gray-500 mt-6">
+            <p>📱 Aguarde nosso contato pelo WhatsApp ou email informado.</p>
+          </div>
         </div>
       </div>
     );
