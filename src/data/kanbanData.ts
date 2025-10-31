@@ -56,28 +56,29 @@ export async function getKanbanColumns(): Promise<Column[]> {
     }
 
     // Filtrar colunas por usuário
-    let query = supabase
-      .from('kanban_colunas')
-      .select('*');
-    
-    // Sempre filtrar por user_id se existir a coluna (usando RPC para verificar schema dinamicamente)
-    // Tentar filtrar por user_id - se falhar, significa que a coluna não existe ainda
-    query = query.order('ordem', { ascending: true });
-    
-    // Tentar filtrar por user_id (pode falhar se coluna não existir)
+    // Primeiro verificar se a coluna user_id existe
+    let hasUserIdColumn = false;
     try {
-      const { data: testData } = await supabase
+      const { data: testData, error: testError } = await supabase
         .from('kanban_colunas')
         .select('user_id')
         .limit(1);
       
-      if (testData && testData.length > 0 && 'user_id' in testData[0]) {
-        query = query.eq('user_id', userId);
+      if (!testError && testData && testData.length > 0 && testData[0] !== null && 'user_id' in testData[0]) {
+        hasUserIdColumn = true;
       }
     } catch (error) {
-      // Se não existir coluna user_id, continuar sem filtro
-      console.log('Coluna user_id não existe ainda, retornando todas as colunas');
+      console.log('Coluna user_id não existe ainda');
     }
+    
+    // Construir query com filtro se user_id existir
+    let query = supabase.from('kanban_colunas').select('*');
+    
+    if (hasUserIdColumn) {
+      query = query.eq('user_id', userId);
+    }
+    
+    query = query.order('ordem', { ascending: true });
 
     const { data, error } = await query;
 
