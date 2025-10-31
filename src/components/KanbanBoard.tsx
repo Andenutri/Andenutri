@@ -25,21 +25,92 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
       
       // Carregar colunas do Kanban
       const colunasData = await getKanbanColumns();
+      
+      // Se não houver colunas, criar as padrão
+      if (!colunasData || colunasData.length === 0) {
+        const { getKanbanColumns } = await import('@/data/kanbanData');
+        const novasColunas = await getKanbanColumns(); // Isso cria as padrão se não existirem
+        setColumns(novasColunas || []);
+        setLoadingColumns(false);
+        
+        // Aguardar um pouco e recarregar
+        setTimeout(async () => {
+          const colunasRecarregadas = await getKanbanColumns();
+          setColumns(colunasRecarregadas);
+          await associarTodosClientesAsColunas(clientesData, colunasRecarregadas);
+          const colunasFinais = await getKanbanColumns();
+          setColumns(colunasFinais);
+        }, 1000);
+        return;
+      }
+      
       setColumns(colunasData);
       setLoadingColumns(false);
       
-      // Associar clientes existentes automaticamente às colunas (apenas uma vez)
-      try {
-        await associarClientesPorStatus();
-        // Recarregar colunas após associação
-        const colunasAtualizadas = await getKanbanColumns();
-        setColumns(colunasAtualizadas);
-      } catch (error) {
-        console.error('Erro ao associar clientes:', error);
-      }
+      // Associar TODOS os clientes às colunas automaticamente
+      await associarTodosClientesAsColunas(clientesData, colunasData);
+      
+      // Recarregar colunas após associação
+      const colunasAtualizadas = await getKanbanColumns();
+      setColumns(colunasAtualizadas);
     }
     loadData();
   }, []);
+
+  // Função para associar todos os clientes às colunas
+  async function associarTodosClientesAsColunas(clientes: ClienteComFormulario[], colunas: Column[]) {
+    if (!clientes || clientes.length === 0 || !colunas || colunas.length === 0) {
+      console.log('Nenhum cliente ou coluna para associar');
+      return;
+    }
+
+    console.log(`🔄 Associando ${clientes.length} clientes a ${colunas.length} colunas...`);
+
+    // Mapear nomes de colunas para status
+    const mapaStatusColuna: Record<string, string> = {};
+    for (const coluna of colunas) {
+      const nomeLower = coluna.nome.toLowerCase();
+      if (nomeLower.includes('ativo')) {
+        mapaStatusColuna['ativo'] = coluna.id;
+      } else if (nomeLower.includes('inativo')) {
+        mapaStatusColuna['inativo'] = coluna.id;
+      } else if (nomeLower.includes('pausado') || nomeLower.includes('pausa')) {
+        mapaStatusColuna['pausado'] = coluna.id;
+      }
+    }
+
+    console.log('📋 Mapa de status → colunas:', mapaStatusColuna);
+
+    // Para cada cliente, adicionar à coluna correspondente
+    for (const cliente of clientes) {
+      const status = cliente.status_plano?.toLowerCase()?.trim();
+      if (!status) continue;
+
+      const columnId = mapaStatusColuna[status];
+      if (!columnId) {
+        console.log(`⚠️ Cliente ${cliente.nome} tem status '${status}' mas não há coluna correspondente`);
+        continue;
+      }
+
+      // Verificar se já está na coluna
+      const coluna = colunas.find(c => c.id === columnId);
+      if (coluna && coluna.clientes.includes(cliente.id)) {
+        console.log(`✓ Cliente ${cliente.nome} já está na coluna ${coluna.nome}`);
+        continue;
+      }
+
+      // Adicionar à coluna
+      try {
+        const { addClientToColumn } = await import('@/data/kanbanData');
+        await addClientToColumn(columnId, cliente.id);
+        console.log(`✅ Cliente ${cliente.nome} adicionado à coluna ${coluna?.nome}`);
+      } catch (error) {
+        console.error(`❌ Erro ao adicionar ${cliente.nome}:`, error);
+      }
+    }
+
+    console.log('✅ Associação concluída!');
+  }
 
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [showAddColumnModal, setShowAddColumnModal] = useState(false);
@@ -438,3 +509,4 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
     </div>
   );
 }
+
