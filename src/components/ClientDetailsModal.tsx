@@ -21,10 +21,10 @@ interface ClientDetailsModalProps {
 
 export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientDetailsModalProps) {
   const [sectionsExpanded, setSectionsExpanded] = useState({
-    basicas: true,
-    preconsulta: true,
-    avaliacaoFisica: false,
-    avaliacaoEmocional: false,
+    basicas: true, // Mantém aberta por padrão
+    preconsulta: false, // Fechada por padrão
+    avaliacaoFisica: false, // Fechada por padrão
+    avaliacaoEmocional: false, // Fechada por padrão
     reavaliacoes: false,
     historico: false,
   });
@@ -131,13 +131,27 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div><strong>Nome:</strong> {cliente.nome}</div>
-                    <div><strong>Email:</strong> {cliente.email}</div>
-                    <div><strong>Telefone:</strong> {cliente.telefone}</div>
-                    <div><strong>WhatsApp:</strong> {cliente.whatsapp}</div>
-                    {cliente.instagram && (
-                      <div><strong>Instagram:</strong> {cliente.instagram}</div>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div><strong>Nome:</strong> {cliente.nome}</div>
+                      <div><strong>Email:</strong> {cliente.email || '-'}</div>
+                      <div><strong>Telefone:</strong> {cliente.telefone}</div>
+                      <div><strong>WhatsApp:</strong> {cliente.whatsapp || '-'}</div>
+                      {cliente.instagram && (
+                        <div><strong>Instagram:</strong> {cliente.instagram}</div>
+                      )}
+                      {(cliente as any).endereco_completo && (
+                        <div className="col-span-2"><strong>Endereço:</strong> {(cliente as any).endereco_completo}</div>
+                      )}
+                    </div>
+                    {/* Campo Perfil/Descrição */}
+                    {(cliente as any).perfil && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold text-amber-700 mb-2">📝 Perfil/Descrição</h4>
+                        <div className="bg-white p-3 rounded-lg border-2 border-gray-200">
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{(cliente as any).perfil}</p>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -166,22 +180,103 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                 
                 {sectionsExpanded.preconsulta && (
                   <div className="p-4 border-t border-blue-200 space-y-4">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div><strong>Nome Completo:</strong> {cliente.formulario.nome_completo}</div>
-                      <div><strong>Idade:</strong> {cliente.formulario.idade} anos</div>
-                      <div><strong>Altura:</strong> {cliente.formulario.altura} cm</div>
-                      <div><strong>Peso Atual:</strong> {cliente.formulario.peso_atual} kg</div>
-                      <div><strong>Peso Desejado:</strong> {cliente.formulario.peso_desejado} kg</div>
-                      <div className="col-span-2"><strong>Endereço:</strong> {cliente.formulario.endereco_completo}</div>
-                    </div>
-                    <div className="border-t pt-4">
-                      <h4 className="font-semibold text-blue-700 mb-2">Rotina Alimentar</h4>
-                      <div className="text-sm space-y-1">
-                        <p><strong>Café da Manhã:</strong> {cliente.formulario.cafe_manha}</p>
-                        <p><strong>Almoço:</strong> {cliente.formulario.almoco}</p>
-                        <p><strong>Jantar:</strong> {cliente.formulario.jantar}</p>
+                    {/* Informações Gerais */}
+                    <div>
+                      <h4 className="font-semibold text-blue-700 mb-3">🔹 Informações Gerais</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div><strong>Nome Completo:</strong> {cliente.formulario.nome_completo || '-'}</div>
+                        <div><strong>Idade:</strong> {cliente.formulario.idade ? `${cliente.formulario.idade} anos` : '-'}</div>
+                        <div><strong>Altura:</strong> {cliente.formulario.altura ? `${cliente.formulario.altura} cm` : '-'}</div>
+                        <div><strong>Peso Atual:</strong> {cliente.formulario.peso_atual ? `${cliente.formulario.peso_atual} kg` : '-'}</div>
+                        <div><strong>Peso Desejado:</strong> {cliente.formulario.peso_desejado ? `${cliente.formulario.peso_desejado} kg` : '-'}</div>
+                        <div><strong>Conheceu por:</strong> {cliente.formulario.conheceu_programa || '-'}</div>
+                        <div className="col-span-2"><strong>Endereço:</strong> {cliente.formulario.endereco_completo || '-'}</div>
+                        <div><strong>WhatsApp:</strong> {cliente.formulario.whatsapp || '-'}</div>
+                        <div><strong>Instagram:</strong> {cliente.formulario.instagram || '-'}</div>
                       </div>
                     </div>
+
+                    {/* Família */}
+                    {(cliente.formulario.casada || cliente.formulario.filhos || cliente.formulario.nomes_idades_filhos) && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold text-blue-700 mb-2">👨‍👩‍👧‍👦 Família</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div><strong>É casada?</strong> {cliente.formulario.casada || '-'}</div>
+                          <div><strong>Tem filhos?</strong> {cliente.formulario.filhos || '-'}</div>
+                          {cliente.formulario.nomes_idades_filhos && (
+                            <div className="col-span-2"><strong>Nomes e Idades dos Filhos:</strong> {cliente.formulario.nomes_idades_filhos}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Trabalho e Rotina */}
+                    {(cliente.formulario.trabalho || cliente.formulario.horario_trabalho || cliente.formulario.dias_trabalho || cliente.formulario.hora_acorda || cliente.formulario.hora_dorme || cliente.formulario.qualidade_sono) && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold text-blue-700 mb-2">💼 Trabalho e Rotina</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div><strong>Trabalho/Profissão:</strong> {cliente.formulario.trabalho || '-'}</div>
+                          <div><strong>Horário Trabalho:</strong> {cliente.formulario.horario_trabalho || '-'}</div>
+                          <div><strong>Dias Trabalho:</strong> {cliente.formulario.dias_trabalho || '-'}</div>
+                          <div><strong>Hora Acorda:</strong> {cliente.formulario.hora_acorda || '-'}</div>
+                          <div><strong>Hora Dorme:</strong> {cliente.formulario.hora_dorme || '-'}</div>
+                          <div><strong>Qualidade Sono:</strong> {cliente.formulario.qualidade_sono || '-'}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Saúde */}
+                    {(cliente.formulario.condicao_saude || cliente.formulario.uso_medicacao || cliente.formulario.medicacao_qual || cliente.formulario.restricao_alimentar || cliente.formulario.usa_suplemento || cliente.formulario.quais_suplementos || cliente.formulario.sente_dor || cliente.formulario.onde_dor) && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold text-blue-700 mb-2">🏥 Saúde</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div><strong>Condição de Saúde:</strong> {cliente.formulario.condicao_saude || '-'}</div>
+                          <div><strong>Usa Medicação?</strong> {cliente.formulario.uso_medicacao || '-'}</div>
+                          {cliente.formulario.medicacao_qual && (
+                            <div className="col-span-2"><strong>Qual Medicação:</strong> {cliente.formulario.medicacao_qual}</div>
+                          )}
+                          <div><strong>Restrição Alimentar:</strong> {cliente.formulario.restricao_alimentar || '-'}</div>
+                          <div><strong>Usa Suplemento?</strong> {cliente.formulario.usa_suplemento || '-'}</div>
+                          {cliente.formulario.quais_suplementos && (
+                            <div className="col-span-2"><strong>Quais Suplementos:</strong> {cliente.formulario.quais_suplementos}</div>
+                          )}
+                          <div><strong>Sente dor ou desconforto?</strong> {cliente.formulario.sente_dor || '-'}</div>
+                          <div><strong>Onde sente dor?</strong> {cliente.formulario.onde_dor || '-'}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rotina Alimentar */}
+                    {(cliente.formulario.cafe_manha || cliente.formulario.lanche_manha || cliente.formulario.almoco || cliente.formulario.lanche_tarde || cliente.formulario.jantar || cliente.formulario.ceia) && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold text-blue-700 mb-2">🍽️ Rotina Alimentar</h4>
+                        <div className="text-sm space-y-2">
+                          {cliente.formulario.cafe_manha && <p><strong>Café da Manhã:</strong> {cliente.formulario.cafe_manha}</p>}
+                          {cliente.formulario.lanche_manha && <p><strong>Lanche Manhã:</strong> {cliente.formulario.lanche_manha}</p>}
+                          {cliente.formulario.almoco && <p><strong>Almoço:</strong> {cliente.formulario.almoco}</p>}
+                          {cliente.formulario.lanche_tarde && <p><strong>Lanche Tarde:</strong> {cliente.formulario.lanche_tarde}</p>}
+                          {cliente.formulario.jantar && <p><strong>Jantar:</strong> {cliente.formulario.jantar}</p>}
+                          {cliente.formulario.ceia && <p><strong>Ceia:</strong> {cliente.formulario.ceia}</p>}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hábitos e Comportamentos */}
+                    {(cliente.formulario.alcool_freq || cliente.formulario.consumo_agua || cliente.formulario.intestino_vezes_semana || cliente.formulario.atividade_fisica || cliente.formulario.refeicao_dificil || cliente.formulario.belisca_quando || cliente.formulario.muda_fins_semana || cliente.formulario.escala_cuidado) && (
+                      <div className="border-t pt-4">
+                        <h4 className="font-semibold text-blue-700 mb-2">🧠 Hábitos e Comportamentos</h4>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {cliente.formulario.alcool_freq && <div><strong>Álcool/Refrigerante:</strong> {cliente.formulario.alcool_freq}</div>}
+                          {cliente.formulario.consumo_agua && <div><strong>Consumo de Água:</strong> {cliente.formulario.consumo_agua}</div>}
+                          {cliente.formulario.intestino_vezes_semana && <div><strong>Intestino (vezes/semana):</strong> {cliente.formulario.intestino_vezes_semana}</div>}
+                          {cliente.formulario.atividade_fisica && <div><strong>Atividade Física:</strong> {cliente.formulario.atividade_fisica}</div>}
+                          {cliente.formulario.refeicao_dificil && <div><strong>Refeição Mais Difícil:</strong> {cliente.formulario.refeicao_dificil}</div>}
+                          {cliente.formulario.belisca_quando && <div><strong>Belisca Quando:</strong> {cliente.formulario.belisca_quando}</div>}
+                          {cliente.formulario.muda_fins_semana && <div><strong>Muda nos Fins de Semana:</strong> {cliente.formulario.muda_fins_semana}</div>}
+                          {cliente.formulario.escala_cuidado && <div><strong>Escala de Cuidado (0-10):</strong> {cliente.formulario.escala_cuidado}</div>}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -293,8 +388,29 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
             </div>
 
             {/* Avaliação Física Editável */}
-            <div className="border-2 border-green-100 rounded-xl overflow-hidden">
-              <AvaliacaoFisicaEditavel cliente={cliente} />
+            <div className="border-2 border-green-100 rounded-xl bg-green-50">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleSection('avaliacaoFisica')}
+                  className="flex-1 flex items-center justify-between p-4 font-bold text-green-800 hover:bg-green-100 transition-colors rounded-xl"
+                >
+                  <h3>💪 Avaliação Física</h3>
+                  <span className="text-2xl">{sectionsExpanded.avaliacaoFisica ? '−' : '+'}</span>
+                </button>
+                <button
+                  onClick={() => setShowEditarAvaliacaoFisicaModal(true)}
+                  className="mx-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold"
+                  title="Editar esta seção"
+                >
+                  ✏️ Editar
+                </button>
+              </div>
+              
+              {sectionsExpanded.avaliacaoFisica && (
+                <div className="border-t border-green-200">
+                  <AvaliacaoFisicaEditavel cliente={cliente} />
+                </div>
+              )}
             </div>
 
             {/* Avaliação Emocional */}
