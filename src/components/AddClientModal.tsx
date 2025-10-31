@@ -525,7 +525,7 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
           <div className="flex gap-4 pt-4 border-t">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => onClose()}
               className="flex-1 px-6 py-3 border-2 border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
             >
               Cancelar
