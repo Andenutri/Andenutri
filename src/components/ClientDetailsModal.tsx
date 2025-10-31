@@ -25,8 +25,8 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
     preconsulta: false, // Fechada por padrão
     avaliacaoFisica: false, // Fechada por padrão
     avaliacaoEmocional: false, // Fechada por padrão
-    reavaliacoes: false,
-    historico: false,
+    reavaliacoesPreenchidas: false, // Reavaliações preenchidas pelo cliente
+    reavaliacoes: false, // Histórico de reavaliações
   });
 
   const [showEditClientModal, setShowEditClientModal] = useState(false);
@@ -48,8 +48,8 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
       [section]: !prev[section]
     }));
     
-    // Carregar reavaliações quando expandir a seção
-    if (section === 'reavaliacoes' && !sectionsExpanded.reavaliacoes && cliente) {
+    // Carregar reavaliações quando expandir a seção de reavaliações preenchidas
+    if ((section === 'reavaliacoesPreenchidas' || section === 'reavaliacoes') && !sectionsExpanded[section] && cliente) {
       carregarReavaliacoes();
     }
   };
@@ -159,7 +159,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               )}
             </div>
 
-            {/* Dados da Pré-Consulta */}
+            {/* Dados da Pré-Consulta / Dados da Primeira Avaliação */}
             {cliente.formulario && (
               <div className="border-2 border-blue-100 rounded-xl bg-blue-50">
                 <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                     onClick={() => toggleSection('preconsulta')}
                     className="flex-1 flex items-center justify-between p-4 font-bold text-blue-800 hover:bg-blue-100 transition-colors rounded-xl"
                   >
-                    <h3>📝 Dados da Pré-Consulta</h3>
+                    <h3>📝 Dados da Primeira Avaliação</h3>
                     <span className="text-2xl">{sectionsExpanded.preconsulta ? '−' : '+'}</span>
                   </button>
                   <button
@@ -283,106 +283,6 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               </div>
             )}
 
-            {/* Reavaliações Preenchidas */}
-            <div className="border-2 border-green-100 rounded-xl bg-green-50">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => toggleSection('reavaliacoes')}
-                  className="flex-1 flex items-center justify-between p-4 font-bold text-green-800 hover:bg-green-100 transition-colors rounded-xl"
-                >
-                  <h3>📋 Reavaliações Preenchidas</h3>
-                  <span className="text-2xl">{sectionsExpanded.reavaliacoes ? '−' : '+'}</span>
-                </button>
-              </div>
-              
-              {sectionsExpanded.reavaliacoes && (
-                <div className="p-4 border-t border-green-200">
-                  {loadingReavaliacoes ? (
-                    <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-600 mx-auto mb-2"></div>
-                      <p className="text-sm text-gray-600">Carregando reavaliações...</p>
-                    </div>
-                  ) : reavaliacoes.length === 0 ? (
-                    <div className="text-center py-8 bg-white rounded-lg border-2 border-dashed border-green-300">
-                      <div className="text-4xl mb-2">📝</div>
-                      <p className="text-gray-600">Nenhuma reavaliação preenchida ainda</p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        Compartilhe o link acima com {cliente.nome}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {reavaliacoes.map((reaval, index) => (
-                        <div key={reaval.id || index} className="bg-white rounded-lg p-4 border-2 border-green-200">
-                          <div className="flex items-center justify-between mb-3 pb-3 border-b">
-                            <h4 className="font-semibold text-green-700">
-                              Reavaliação #{reavaliacoes.length - index}
-                            </h4>
-                            <span className="text-xs text-gray-500">
-                              {reaval.data_preenchimento 
-                                ? new Date(reaval.data_preenchimento).toLocaleDateString('pt-BR')
-                                : 'Data não disponível'}
-                            </span>
-                          </div>
-                          
-                          <div className="space-y-3 text-sm">
-                            {reaval.peso_atual && (
-                              <div>
-                                <strong className="text-gray-700">⚖️ Peso atual:</strong>
-                                <p className="text-gray-600 ml-2">{reaval.peso_atual}</p>
-                              </div>
-                            )}
-                            {reaval.mudancas_corpo_disposicao && (
-                              <div>
-                                <strong className="text-gray-700">💪 Mudanças percebidas:</strong>
-                                <p className="text-gray-600 ml-2">{reaval.mudancas_corpo_disposicao}</p>
-                              </div>
-                            )}
-                            {reaval.energia_dia && (
-                              <div>
-                                <strong className="text-gray-700">⚡ Energia:</strong>
-                                <p className="text-gray-600 ml-2">{reaval.energia_dia}</p>
-                              </div>
-                            )}
-                            {reaval.intestino_sono && (
-                              <div>
-                                <strong className="text-gray-700">😴 Intestino e sono:</strong>
-                                <p className="text-gray-600 ml-2">{reaval.intestino_sono}</p>
-                              </div>
-                            )}
-                            {reaval.rotina_alimentacao_organizada && (
-                              <div>
-                                <strong className="text-gray-700">🍽️ Rotina alimentar:</strong>
-                                <p className="text-gray-600 ml-2">{reaval.rotina_alimentacao_organizada}</p>
-                              </div>
-                            )}
-                            {reaval.o_que_ajudou && (
-                              <div>
-                                <strong className="text-gray-700">✅ O que ajudou:</strong>
-                                <p className="text-gray-600 ml-2">{reaval.o_que_ajudou}</p>
-                              </div>
-                            )}
-                            {reaval.o_que_atrapalhou && (
-                              <div>
-                                <strong className="text-gray-700">⚠️ O que atrapalhou:</strong>
-                                <p className="text-gray-600 ml-2">{reaval.o_que_atrapalhou}</p>
-                              </div>
-                            )}
-                            {reaval.maior_foco_nova_fase && (
-                              <div>
-                                <strong className="text-gray-700">🎯 Foco para nova fase:</strong>
-                                <p className="text-gray-600 ml-2">{reaval.maior_foco_nova_fase}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
             {/* Avaliação Física Editável */}
             <div className="border-2 border-green-100 rounded-xl bg-green-50">
               <div className="flex items-center gap-2">
@@ -485,7 +385,131 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               )}
             </div>
 
-            {/* Reavaliações */}
+            {/* Reavaliações Preenchidas */}
+            <div className="border-2 border-green-100 rounded-xl bg-green-50">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => toggleSection('reavaliacoesPreenchidas')}
+                  className="flex-1 flex items-center justify-between p-4 font-bold text-green-800 hover:bg-green-100 transition-colors rounded-xl"
+                >
+                  <h3>📋 Reavaliações Preenchidas</h3>
+                  <span className="text-2xl">{sectionsExpanded.reavaliacoesPreenchidas ? '−' : '+'}</span>
+                </button>
+              </div>
+              
+              {sectionsExpanded.reavaliacoesPreenchidas && (
+                <div className="p-4 border-t border-green-200">
+                  {loadingReavaliacoes ? (
+                    <div className="text-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-600 mx-auto mb-2"></div>
+                      <p className="text-sm text-gray-600">Carregando reavaliações...</p>
+                    </div>
+                  ) : reavaliacoes.length === 0 ? (
+                    <div className="text-center py-8 bg-white rounded-lg border-2 border-dashed border-green-300">
+                      <div className="text-4xl mb-2">📝</div>
+                      <p className="text-gray-600">Nenhuma reavaliação preenchida ainda</p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Compartilhe o link acima com {cliente.nome}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {reavaliacoes.map((reaval, index) => (
+                        <div key={reaval.id || index} className="bg-white rounded-lg p-4 border-2 border-green-200">
+                          <div className="flex items-center justify-between mb-3 pb-3 border-b">
+                            <h4 className="font-semibold text-green-700">
+                              Reavaliação #{reavaliacoes.length - index}
+                            </h4>
+                            <span className="text-xs text-gray-500">
+                              {reaval.data_preenchimento 
+                                ? new Date(reaval.data_preenchimento).toLocaleDateString('pt-BR')
+                                : 'Data não disponível'}
+                            </span>
+                          </div>
+                          
+                          <div className="space-y-3 text-sm">
+                            {reaval.peso_atual && (
+                              <div>
+                                <strong className="text-gray-700">⚖️ Peso atual:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.peso_atual}</p>
+                              </div>
+                            )}
+                            {reaval.mudancas_corpo_disposicao && (
+                              <div>
+                                <strong className="text-gray-700">💪 Mudanças percebidas:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.mudancas_corpo_disposicao}</p>
+                              </div>
+                            )}
+                            {reaval.energia_dia && (
+                              <div>
+                                <strong className="text-gray-700">⚡ Energia:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.energia_dia}</p>
+                              </div>
+                            )}
+                            {reaval.intestino_sono && (
+                              <div>
+                                <strong className="text-gray-700">😴 Intestino e sono:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.intestino_sono}</p>
+                              </div>
+                            )}
+                            {reaval.rotina_alimentacao_organizada && (
+                              <div>
+                                <strong className="text-gray-700">🍽️ Rotina alimentar:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.rotina_alimentacao_organizada}</p>
+                              </div>
+                            )}
+                            {reaval.refeicoes_faceis && (
+                              <div>
+                                <strong className="text-gray-700">✅ Refeições mais fáceis:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.refeicoes_faceis}</p>
+                              </div>
+                            )}
+                            {reaval.refeicoes_desafiadoras && (
+                              <div>
+                                <strong className="text-gray-700">⚠️ Refeições mais desafiadoras:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.refeicoes_desafiadoras}</p>
+                              </div>
+                            )}
+                            {reaval.agua_suplementos && (
+                              <div>
+                                <strong className="text-gray-700">💧 Água e suplementos:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.agua_suplementos}</p>
+                              </div>
+                            )}
+                            {reaval.atividade_fisica && (
+                              <div>
+                                <strong className="text-gray-700">🏃 Atividade física:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.atividade_fisica}</p>
+                              </div>
+                            )}
+                            {reaval.o_que_ajudou && (
+                              <div>
+                                <strong className="text-gray-700">✅ O que ajudou:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.o_que_ajudou}</p>
+                              </div>
+                            )}
+                            {reaval.o_que_atrapalhou && (
+                              <div>
+                                <strong className="text-gray-700">⚠️ O que atrapalhou:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.o_que_atrapalhou}</p>
+                              </div>
+                            )}
+                            {reaval.maior_foco_nova_fase && (
+                              <div>
+                                <strong className="text-gray-700">🎯 Foco para nova fase:</strong>
+                                <p className="text-gray-600 ml-2">{reaval.maior_foco_nova_fase}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Histórico de Reavaliações */}
             <div className="border-2 border-indigo-100 rounded-xl bg-indigo-50">
               <div className="flex items-center gap-2">
                 <button
