@@ -77,7 +77,7 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
       setColumns(colunasLimpas);
       
       // Associar TODOS os clientes às colunas automaticamente
-      const clientesParaAssociar = clientesExternos || clientesData;
+      const clientesParaAssociar = clientesExternos || allClientes;
       console.log('🔄 Iniciando associação de clientes...');
       await associarTodosClientesAsColunas(clientesParaAssociar, colunasLimpas);
       
