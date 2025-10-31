@@ -60,7 +60,7 @@ export async function getAllEventos(): Promise<Evento[]> {
 }
 
 // Salvar novo evento
-export async function saveEvento(evento: Omit<Evento, 'id'>) {
+export async function saveEvento(evento: Omit<Evento, 'id'>, clienteId?: string) {
   if (!isSupabaseConnected()) {
     console.warn('⚠️ Supabase não configurado.');
     return null;
@@ -68,19 +68,35 @@ export async function saveEvento(evento: Omit<Evento, 'id'>) {
 
   try {
     const { supabase } = await import('../lib/supabase');
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    
+    const eventoData: any = {
+      titulo: evento.titulo,
+      descricao: evento.descricao,
+      data_evento: evento.data.toISOString(),
+      hora_evento: evento.hora,
+      cliente_nome: evento.cliente,
+      tipo_evento: evento.tipo,
+      cor: evento.cor,
+      lembrete: evento.lembrete,
+      status: 'agendado',
+    };
+
+    // Adicionar cliente_id se fornecido
+    if (clienteId) {
+      eventoData.cliente_id = clienteId;
+    }
+
+    // Adicionar user_id se disponível
+    if (userId) {
+      eventoData.user_id = userId;
+    }
+
     const { data, error } = await supabase
       .from('eventos_agenda')
-      .insert({
-        titulo: evento.titulo,
-        descricao: evento.descricao,
-        data_evento: evento.data.toISOString(),
-        hora_evento: evento.hora,
-        cliente_nome: evento.cliente,
-        tipo_evento: evento.tipo,
-        cor: evento.cor,
-        lembrete: evento.lembrete,
-        status: 'agendado',
-      })
+      .insert(eventoData)
       .select()
       .single();
 

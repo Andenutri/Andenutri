@@ -10,7 +10,7 @@ import EditarPreConsultaModal from './EditarPreConsultaModal';
 import EditarAvaliacaoFisicaModal from './EditarAvaliacaoFisicaModal';
 import EditarAvaliacaoEmocionalModal from './EditarAvaliacaoEmocionalModal';
 import AvaliacaoFisicaEditavel from './AvaliacaoFisicaEditavel';
-import LinkReavaliacaoCliente from './LinkReavaliacaoCliente';
+import AgendarReavaliacaoModal from './AgendarReavaliacaoModal';
 import { getReavaliacoesCliente, type ReavaliacaoResposta } from '@/data/reavaliacoesData';
 
 interface ClientDetailsModalProps {
@@ -31,6 +31,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
 
   const [showEditClientModal, setShowEditClientModal] = useState(false);
   const [showReavaliacaoModal, setShowReavaliacaoModal] = useState(false);
+  const [showAgendarReavaliacaoModal, setShowAgendarReavaliacaoModal] = useState(false);
   const [showPlalhaEvolucaoModal, setShowPlalhaEvolucaoModal] = useState(false);
   const [showEditarBasicasModal, setShowEditarBasicasModal] = useState(false);
   const [showEditarPreConsultaModal, setShowEditarPreConsultaModal] = useState(false);
@@ -281,11 +282,6 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                 )}
               </div>
             )}
-
-            {/* Link de Reavaliação */}
-            <div className="border-2 border-green-200 rounded-xl bg-green-50 p-4">
-              <LinkReavaliacaoCliente cliente={cliente} />
-            </div>
 
             {/* Reavaliações Preenchidas */}
             <div className="border-2 border-green-100 rounded-xl bg-green-50">
@@ -587,23 +583,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
                 📊 Planilha de Evolução
               </button>
               <button
-                onClick={() => {
-                  // Copiar link de reavaliação automaticamente
-                  const codigo = cliente?.codigo_reavaliacao || (cliente?.id ? cliente.id.substring(0, 8).toUpperCase() : '');
-                  if (codigo) {
-                    const url = typeof window !== 'undefined' 
-                      ? `${window.location.origin}/reavaliacao/${codigo}`
-                      : `https://andenutri.com/reavaliacao/${codigo}`;
-                    
-                    navigator.clipboard.writeText(url).then(() => {
-                      alert(`✅ Link de reavaliação copiado!\n\n${url}\n\nEnvie este link para ${cliente?.nome} preencher antes da consulta.`);
-                    }).catch(() => {
-                      alert(`⚠️ Erro ao copiar. Acesse o link manualmente:\n\n${url}`);
-                    });
-                  } else {
-                    alert('⚠️ Código de reavaliação não encontrado para este cliente.');
-                  }
-                }}
+                onClick={() => setShowAgendarReavaliacaoModal(true)}
                 className="w-full sm:flex-1 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base"
               >
                 📅 Agendar Reavaliação
@@ -708,6 +688,15 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               window.location.reload();
             }
           }}
+          cliente={cliente}
+        />
+      )}
+
+      {/* Modal de Agendar Reavaliação */}
+      {showAgendarReavaliacaoModal && (
+        <AgendarReavaliacaoModal
+          isOpen={showAgendarReavaliacaoModal}
+          onClose={() => setShowAgendarReavaliacaoModal(false)}
           cliente={cliente}
         />
       )}
