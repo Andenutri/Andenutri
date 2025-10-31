@@ -60,8 +60,17 @@ export async function getKanbanColumns(): Promise<Column[]> {
       .from('kanban_colunas')
       .select('*');
     
-    // Se a tabela tiver coluna user_id, filtrar
-    // Caso contrário, retornar todas (compatibilidade)
+    // Verificar se a tabela tem coluna user_id e filtrar
+    const { data: columnInfo } = await supabase
+      .from('kanban_colunas')
+      .select('user_id')
+      .limit(1);
+    
+    // Se houver coluna user_id, filtrar por usuário
+    if (columnInfo && columnInfo.length > 0 && columnInfo[0].user_id) {
+      query = query.eq('user_id', userId);
+    }
+    
     query = query.order('ordem', { ascending: true });
 
     const { data, error } = await query;
