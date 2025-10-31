@@ -287,17 +287,19 @@ export default function AgendaPage() {
           <div className="flex gap-3">
             <a 
               href="/"
-              className="px-4 md:px-6 py-2 md:py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm md:text-base"
+              className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base font-semibold flex items-center gap-2"
             >
-              ← Voltar
+              🏠 Voltar para Dashboard
             </a>
             <button
               onClick={() => {
                 setEditingEvent(null);
-                setFormData({ titulo: '', descricao: '', data: '', hora: '', cliente: '', tipo: 'consulta', lembrete: '' });
+                // Preencher data com hoje se não tiver data selecionada
+                const dataDefault = selectedDate.toISOString().split('T')[0];
+                setFormData({ titulo: '', descricao: '', data: dataDefault, hora: '', cliente: '', tipo: 'consulta', lembrete: '' });
                 setShowModal(true);
               }}
-              className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base"
+              className="px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base font-semibold flex items-center gap-2"
             >
               ➕ Novo Evento
             </button>
@@ -419,11 +421,26 @@ export default function AgendaPage() {
                   return (
                   <div
                     key={day}
-                    className={`p-2 md:p-4 min-h-[60px] md:min-h-[100px] bg-white border-2 rounded-lg ${
-                      isToday ? 'border-amber-500 bg-amber-50' : 'border-gray-200'
+                    className={`p-2 md:p-4 min-h-[60px] md:min-h-[100px] bg-white border-2 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                      isToday ? 'border-amber-500 bg-amber-50' : 'border-gray-200 hover:border-amber-300'
                     }`}
                     onDragOver={handleDragOver}
                     onDrop={() => handleDrop(date)}
+                    onClick={() => {
+                      // Ao clicar na data, abrir modal para criar evento com data já preenchida
+                      const dataFormatada = date.toISOString().split('T')[0];
+                      setEditingEvent(null);
+                      setFormData({ 
+                        titulo: '', 
+                        descricao: '', 
+                        data: dataFormatada, 
+                        hora: '', 
+                        cliente: '', 
+                        tipo: 'consulta', 
+                        lembrete: '' 
+                      });
+                      setShowModal(true);
+                    }}
                   >
                     <div className={`text-sm md:text-base font-bold mb-1 ${isToday ? 'text-amber-700' : 'text-gray-800'}`}>
                       {day}
@@ -434,7 +451,11 @@ export default function AgendaPage() {
                           key={evento.id}
                           draggable
                           onDragStart={() => handleDragStart(evento)}
-                          className={`text-xs p-1 rounded truncate ${coresEventos[evento.tipo]} cursor-move hover:opacity-80`}
+                          onClick={(e) => {
+                            e.stopPropagation(); // Impedir que clique no evento abra modal de novo evento
+                            handleEditEvent(evento);
+                          }}
+                          className={`text-xs p-1 rounded truncate ${coresEventos[evento.tipo]} cursor-pointer hover:opacity-80`}
                         >
                           {evento.hora} - {evento.titulo}
                         </div>

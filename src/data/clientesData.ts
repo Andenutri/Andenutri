@@ -78,6 +78,133 @@ export async function getAllClientes(): Promise<ClienteComFormulario[]> {
   }
 }
 
+// Campos válidos na tabela clientes do Supabase
+const CAMPOS_VALIDOS_CLIENTES = [
+  'id',
+  'nome',
+  'email',
+  'telefone',
+  'whatsapp',
+  'instagram',
+  'pais_telefone',
+  'endereco_completo',
+  'pais',
+  'estado',
+  'cidade',
+  'status_programa',
+  'status_herbalife',
+  'status_challenge',
+  'herbalife_usuario',
+  'herbalife_senha',
+  'indicado_por',
+  'perfil',
+  'is_lead',
+  'user_id',
+  'codigo_reavaliacao',
+  'data_criacao',
+  'data_atualizacao',
+];
+
+// Remover campos inválidos do objeto cliente antes de enviar ao Supabase
+function sanitizarDadosCliente(dados: any): any {
+  const dadosLimpos: any = {};
+  
+  // Primeiro, garantir que column_id e outros campos inválidos sejam removidos
+  delete dados.column_id;
+  delete dados.status_plano; // Usar status_programa em vez disso
+  
+  for (const campo of CAMPOS_VALIDOS_CLIENTES) {
+    // Ignorar campos undefined e null
+    if (campo in dados && dados[campo] !== undefined && dados[campo] !== null) {
+      // Para email, se estiver vazio mas nome existe, permitir string vazia (será tratado pelo Supabase)
+      if (campo === 'email' && dados[campo] === '' && dados.nome) {
+        dadosLimpos[campo] = dados[campo] || null;
+      } else if (dados[campo] !== '') {
+        // Para outros campos, incluir mesmo se for string vazia (alguns campos podem ser vazios)
+        dadosLimpos[campo] = dados[campo];
+      } else if (campo === 'nome' || campo === 'email') {
+        // Nome e email podem precisar de valores padrão
+        dadosLimpos[campo] = dados[campo] || '';
+      }
+    }
+  }
+  
+  // Garantir novamente que column_id não está presente (segurança extra)
+  delete dadosLimpos.column_id;
+  
+  return dadosLimpos;
+}
+
+// Buscar cliente existente antes de criar (evitar duplicados)
+async function verificarClienteExistente(
+  nome?: string,
+  email?: string,
+  whatsapp?: string
+): Promise<string | null> {
+  try {
+    const { supabase } = await import('../lib/supabase');
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    if (!userId) return null;
+
+    // Buscar por email (exato)
+    if (email) {
+      const { data: porEmail } = await supabase
+        .from('clientes')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('email', email)
+        .maybeSingle();
+
+      if (porEmail) return porEmail.id;
+    }
+
+    // Buscar por whatsapp (normalizado)
+    if (whatsapp) {
+      const whatsappLimpo = whatsapp.replace(/\D/g, '');
+      const { data: todos } = await supabase
+        .from('clientes')
+        .select('id, whatsapp')
+        .eq('user_id', userId)
+        .limit(100);
+
+      if (todos) {
+        const encontrado = todos.find(c => 
+          (c.whatsapp || '').replace(/\D/g, '') === whatsappLimpo && whatsappLimpo.length > 0
+        );
+        if (encontrado) return encontrado.id;
+      }
+    }
+
+    // Buscar por nome similar (se não encontrou por email/whatsapp)
+    if (nome) {
+      const nomeNormalizado = nome.trim().toLowerCase();
+      const { data: porNome } = await supabase
+        .from('clientes')
+        .select('id, nome')
+        .eq('user_id', userId)
+        .ilike('nome', `%${nomeNormalizado}%`)
+        .limit(10);
+
+      if (porNome && porNome.length > 0) {
+        // Se nome for muito similar, retornar (ex: "Maria Silva" = "Maria Silva Santos")
+        const similar = porNome.find(c => 
+          c.nome.toLowerCase().trim() === nomeNormalizado ||
+          nomeNormalizado.includes(c.nome.toLowerCase().trim()) ||
+          c.nome.toLowerCase().trim().includes(nomeNormalizado)
+        );
+        if (similar) return similar.id;
+      }
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Erro ao verificar cliente existente:', error);
+    return null;
+  }
+}
+
 // Função para criar/atualizar cliente
 export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
   // Se não estiver conectado ao Supabase, permite salvar localmente
@@ -133,19 +260,22 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
         return null;
       }
 
+      // Sanitizar dados antes de atualizar
+      const dadosAtualizacao = sanitizarDadosCliente({
+        nome: cliente.nome,
+        email: cliente.email,
+        telefone: cliente.telefone,
+        whatsapp: cliente.whatsapp,
+        instagram: cliente.instagram,
+        status_programa: cliente.status_plano,
+        perfil: cliente.perfil || null,
+        is_lead: cliente.is_lead || false,
+        data_atualizacao: new Date().toISOString(),
+      });
+
       const { data, error } = await supabase
         .from('clientes')
-        .update({
-          nome: cliente.nome,
-          email: cliente.email,
-          telefone: cliente.telefone,
-          whatsapp: cliente.whatsapp,
-          instagram: cliente.instagram,
-          status_programa: cliente.status_plano,
-          perfil: cliente.perfil || null,
-          is_lead: cliente.is_lead || false,
-          data_atualizacao: new Date().toISOString(),
-        })
+        .update(dadosAtualizacao)
         .eq('id', cliente.id)
         .eq('user_id', userId) // Garantir que pertence ao usuário
         .select()
@@ -154,22 +284,75 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
       if (error) throw error;
       return data;
     } else {
+      // ANTES DE CRIAR: Verificar se cliente já existe
+      const clienteExistenteId = await verificarClienteExistente(
+        cliente.nome,
+        cliente.email,
+        cliente.whatsapp
+      );
+
+      if (clienteExistenteId) {
+        // Cliente já existe - ATUALIZAR em vez de criar
+        const dadosAtualizacao = sanitizarDadosCliente({
+          nome: cliente.nome,
+          email: cliente.email,
+          telefone: cliente.telefone,
+          whatsapp: cliente.whatsapp,
+          instagram: cliente.instagram,
+          status_programa: cliente.status_plano,
+          perfil: cliente.perfil,
+          is_lead: cliente.is_lead,
+          data_atualizacao: new Date().toISOString(),
+        });
+
+        const { data, error } = await supabase
+          .from('clientes')
+          .update(dadosAtualizacao)
+          .eq('id', clienteExistenteId)
+          .eq('user_id', userId)
+          .select()
+          .single();
+
+        if (error) throw error;
+        
+        alert('✅ Cliente atualizado! Encontramos um cliente similar e atualizamos os dados.');
+        return data;
+      }
+
+      // Validar campos obrigatórios antes de criar
+      const erros: string[] = [];
+      
+      if (!cliente.nome || !cliente.nome.trim()) {
+        erros.push('Nome');
+      }
+      
+      if (!cliente.telefone || !cliente.telefone.trim()) {
+        erros.push('Telefone');
+      }
+      
+      if (erros.length > 0) {
+        const mensagem = `❌ Não é possível salvar o cliente. Campos obrigatórios faltando: ${erros.join(', ')}`;
+        throw new Error(mensagem);
+      }
+
       // Criar novo cliente - user_id será preenchido pelo trigger automaticamente
+      // Sanitizar dados para remover campos inválidos (como column_id)
+      const dadosParaInserir = sanitizarDadosCliente({
+        nome: cliente.nome.trim(),
+        telefone: cliente.telefone.trim(),
+        email: cliente.email?.trim() || null, // Opcional
+        whatsapp: cliente.whatsapp?.trim() || null, // Opcional
+        instagram: cliente.instagram?.trim() || null, // Opcional
+        status_programa: cliente.status_plano || 'ativo',
+        perfil: cliente.perfil || null,
+        is_lead: cliente.is_lead || false,
+        user_id: userId, // Associar ao usuário atual
+        data_criacao: new Date().toISOString(),
+      });
+      
       const { data, error } = await supabase
         .from('clientes')
-        .insert({
-          nome: cliente.nome,
-          email: cliente.email || '',
-          telefone: cliente.telefone || '',
-          whatsapp: cliente.whatsapp || '',
-          instagram: cliente.instagram || '',
-          status_programa: cliente.status_plano || 'ativo',
-          perfil: cliente.perfil || null,
-          is_lead: cliente.is_lead || false,
-          column_id: cliente.column_id || null,
-          user_id: userId, // Associar ao usuário atual
-          data_criacao: new Date().toISOString(),
-        })
+        .insert(dadosParaInserir)
         .select()
         .single();
 
@@ -178,9 +361,18 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
       alert('✅ Cliente salvo com sucesso no Supabase!');
       return data;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erro ao salvar no Supabase:', error);
-    alert('❌ Erro ao salvar no Supabase. Verifique o console.');
+    
+    // Mostrar mensagem específica se for erro de validação
+    if (error?.message && (error.message.includes('obrigatório') || error.message.includes('Campos obrigatórios'))) {
+      alert(error.message);
+    } else if (error?.message) {
+      alert(`❌ Erro ao salvar: ${error.message}`);
+    } else {
+      alert('❌ Erro ao salvar no Supabase. Verifique o console para mais detalhes.');
+    }
+    
     return null;
   }
 }

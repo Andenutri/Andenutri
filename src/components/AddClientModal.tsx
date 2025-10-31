@@ -99,25 +99,69 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validar se pelo menos um campo foi preenchido
-    if (!formData.nome && !formData.email && !formData.telefone && !formData.whatsapp) {
-      alert('Por favor, preencha pelo menos um campo');
+    // Validar campos obrigatórios: nome e telefone
+    const erros: string[] = [];
+    
+    if (!formData.nome || !formData.nome.trim()) {
+      erros.push('❌ Nome é obrigatório');
+    }
+    
+    if (!formData.telefone || !formData.telefone.trim()) {
+      erros.push('❌ Telefone é obrigatório');
+    }
+    
+    // Se houver erros, mostrar todos de uma vez
+    if (erros.length > 0) {
+      const mensagem = '⚠️ Não é possível salvar. Campos obrigatórios faltando:\n\n' + erros.join('\n');
+      alert(mensagem);
       return;
     }
     
     // Salvar (Supabase ou localStorage)
+    // Remover column_id antes de salvar (não existe na tabela Supabase)
+    const { column_id, ...formDataSemColumnId } = formData;
+    
+    // Se estiver editando, remover column_id também do clienteParaEditar
+    let clienteEditadoSemColumnId = null;
+    if (clienteParaEditar) {
+      const { column_id: _, ...resto } = clienteParaEditar as any;
+      clienteEditadoSemColumnId = resto;
+    }
+    
     const clienteData = {
-      ...clienteParaEditar,
-      nome: formData.nome,
-      email: formData.email,
-      telefone: formData.telefone,
-      whatsapp: formData.whatsapp,
-      instagram: formData.instagram,
+      ...(clienteEditadoSemColumnId || {}),
+      nome: formData.nome || undefined,
+      email: formData.email || undefined,
+      telefone: formData.telefone || undefined,
+      whatsapp: formData.whatsapp || undefined,
+      instagram: formData.instagram || undefined,
       status_plano: formData.status_programa as 'ativo' | 'inativo' | 'pausado',
+      perfil: formData.perfil || undefined,
+      is_lead: formData.is_lead || undefined,
+      endereco_completo: formData.endereco_completo || undefined,
+      // NUNCA incluir column_id - usado apenas no frontend
     };
     
-    await saveCliente(clienteData);
-    onClose();
+    // Remover campos undefined para não enviar ao Supabase
+    Object.keys(clienteData).forEach(key => {
+      if (clienteData[key] === undefined || clienteData[key] === '') {
+        delete clienteData[key];
+      }
+    });
+    
+    try {
+      const resultado = await saveCliente(clienteData);
+      
+      if (resultado) {
+        alert('✅ Cliente salvo com sucesso!');
+        onClose();
+      } else {
+        // saveCliente já mostrou o erro, não precisa mostrar novamente
+      }
+    } catch (error: any) {
+      // Erro já foi tratado em saveCliente, mas podemos adicionar tratamento extra aqui se necessário
+      console.error('Erro ao salvar cliente:', error);
+    }
   };
 
   if (!isOpen) return null;

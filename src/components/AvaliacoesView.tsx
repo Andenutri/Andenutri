@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import AvaliacaoEmocionalModal from './AvaliacaoEmocionalModal';
-import { getAllClientes, getClientesParaAvaliar, ClienteComFormulario } from '@/data/mockClientes';
+import AddClientModal from './AddClientModal';
+import { ClienteComFormulario } from '@/data/mockClientes';
+import { getAllClientes } from '@/data/clientesData';
 
 interface Avaliacao {
   id: string;
@@ -16,8 +18,11 @@ interface Avaliacao {
 
 export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [showModalEmocional, setShowModalEmocional] = useState(false);
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState<ClienteComFormulario | null>(null);
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
+  const [clientes, setClientes] = useState<ClienteComFormulario[]>([]);
+  const [clientesParaAvaliar, setClientesParaAvaliar] = useState<ClienteComFormulario[]>([]);
   
   useEffect(() => {
     // Carregar avaliações salvas do localStorage
@@ -25,10 +30,22 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
       const avaliacoesSalvas = JSON.parse(localStorage.getItem('avaliacoes_emocionais') || '[]');
       setAvaliacoes(avaliacoesSalvas);
     }
-  }, [showModalEmocional]); // Recarregar quando o modal fechar
+  }, [showModalEmocional]); // Recarregar quando o modal de avaliação fechar
   
-  const clientes = getAllClientes();
-  const clientesParaAvaliar = getClientesParaAvaliar();
+  useEffect(() => {
+    // Carregar clientes inicialmente e quando modal de adicionar cliente fechar
+    const loadClientes = async () => {
+      const todosClientes = await getAllClientes();
+      // Filtrar clientes que precisam de avaliação (têm formulário preenchido mas não têm avaliação)
+      const paraAvaliar = todosClientes.filter(cliente => 
+        cliente.formulario_preenchido && !cliente.avaliacao_feita
+      );
+      setClientes(todosClientes);
+      setClientesParaAvaliar(paraAvaliar);
+    };
+    
+    loadClientes();
+  }, [showAddClientModal]); // Recarregar quando o modal de adicionar cliente fechar
   
   const abrirAvaliacaoEmocional = (cliente: ClienteComFormulario) => {
     setClienteSelecionado(cliente);
@@ -48,10 +65,20 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
         <div className="space-y-6">
           {/* Clientes Aguardando Avaliação */}
           <div className="bg-white rounded-xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-purple-700 mb-4">⏰ Clientes Aguardando Avaliação</h2>
-            <p className="text-gray-600 mb-6">
-              {clientesParaAvaliar.length} clientes preencheram o formulário de pré-consulta e aguardam avaliação emocional
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-purple-700 mb-2">⏰ Clientes Aguardando Avaliação</h2>
+                <p className="text-gray-600">
+                  {clientesParaAvaliar.length} clientes preencheram o formulário de pré-consulta e aguardam avaliação emocional
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAddClientModal(true)}
+                className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 py-3 rounded-lg hover:scale-105 transition-all shadow-lg font-semibold text-base flex items-center gap-2"
+              >
+                ➕ Adicionar Cliente
+              </button>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {clientesParaAvaliar.map((cliente) => (
@@ -150,6 +177,15 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
           cliente={clienteSelecionado}
         />
       )}
+
+      {/* Modal de Adicionar Cliente */}
+      <AddClientModal
+        isOpen={showAddClientModal}
+        onClose={() => {
+          setShowAddClientModal(false);
+          // Os clientes serão recarregados automaticamente quando os dados mudarem
+        }}
+      />
     </div>
   );
 }
