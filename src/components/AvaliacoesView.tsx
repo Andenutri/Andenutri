@@ -181,7 +181,7 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
       {/* Modal de Adicionar Cliente */}
       <AddClientModal
         isOpen={showAddClientModal}
-        onClose={() => {
+        onClose={(_data) => {
           setShowAddClientModal(false);
           // Os clientes serão recarregados automaticamente quando os dados mudarem
         }}
