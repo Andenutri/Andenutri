@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { getAllClientes, ClienteComFormulario } from '@/data/clientesData';
 import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
-import { syncAllColumns, Column, getKanbanColumns } from '@/data/kanbanData';
+import { syncAllColumns, Column, getKanbanColumns, saveKanbanColumn } from '@/data/kanbanData';
 
 export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [allClientes, setAllClientes] = useState<ClienteComFormulario[]>([]);
@@ -86,17 +86,27 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
     setDraggedItem(null);
   };
 
-  const adicionarColuna = () => {
+  const adicionarColuna = async () => {
     if (!newColumnData.nome.trim()) return;
-    const novaColuna: Column = {
-      id: Date.now().toString(),
-      nome: newColumnData.nome,
-      cor: newColumnData.cor,
-      clientes: []
-    };
-    setColumns([...columns, novaColuna]);
-    setShowAddColumnModal(false);
-    setNewColumnData({ nome: '', cor: 'purple' });
+    try {
+      // Salvar no Supabase primeiro
+      const colunaSalva = await saveKanbanColumn({
+        nome: newColumnData.nome,
+        cor: newColumnData.cor,
+        ordem: columns.length,
+        clientes_ids: []
+      });
+      
+      // Recarregar colunas do Supabase para pegar o ID correto
+      const colunasData = await getKanbanColumns();
+      setColumns(colunasData);
+      
+      setShowAddColumnModal(false);
+      setNewColumnData({ nome: '', cor: 'purple' });
+    } catch (error) {
+      console.error('Erro ao criar coluna:', error);
+      alert('❌ Erro ao criar coluna. Tente novamente.');
+    }
   };
 
   const removerColuna = (columnId: string) => {
