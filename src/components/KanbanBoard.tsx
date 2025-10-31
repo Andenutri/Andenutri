@@ -228,6 +228,13 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
                   </div>
 
                   <div className="bg-gray-100 rounded-b-xl p-3 min-h-[200px] lg:min-h-[500px] lg:max-h-[calc(100vh-250px)] overflow-y-auto space-y-3" style={{ maxHeight: '60vh' }}>
+                    {clientesNaColuna.length === 0 && !loadingClientes && (
+                      <div className="text-center py-8 text-gray-500">
+                        <div className="text-4xl mb-2">📭</div>
+                        <p className="text-sm">Nenhum cliente nesta coluna</p>
+                        <p className="text-xs mt-1">Clique em "Adicionar Cliente" acima</p>
+                      </div>
+                    )}
                     {clientesNaColuna.map((cliente) => (
                       <div
                         key={cliente.id}

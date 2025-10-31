@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
 import { saveCliente, isSupabaseConnected } from '@/data/clientesData';
+import { getKanbanColumns, Column } from '@/data/kanbanData';
 
 interface AddClientModalProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ interface AddClientModalProps {
 export default function AddClientModal({ isOpen, onClose, clienteParaEditar, defaultSection, defaultColumn }: AddClientModalProps) {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [columnId, setColumnId] = useState<string | null>(defaultColumn || null);
+  const [kanbanColumns, setKanbanColumns] = useState<Column[]>([]);
+  const [loadingColumns, setLoadingColumns] = useState(false);
   
   const [formData, setFormData] = useState({
     // Informações Básicas
@@ -68,6 +71,24 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
       setFormData(prev => ({ ...prev, column_id: defaultColumn }));
     }
   }, [defaultColumn]);
+
+  // Carregar colunas do Kanban quando o modal abrir
+  useEffect(() => {
+    if (isOpen && !clienteParaEditar) {
+      async function loadColumns() {
+        setLoadingColumns(true);
+        try {
+          const columns = await getKanbanColumns();
+          setKanbanColumns(columns);
+        } catch (error) {
+          console.error('Erro ao carregar colunas:', error);
+        } finally {
+          setLoadingColumns(false);
+        }
+      }
+      loadColumns();
+    }
+  }, [isOpen, clienteParaEditar]);
 
   useEffect(() => {
     if (clienteParaEditar) {
@@ -430,17 +451,25 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Escolher Coluna</label>
                 <select
-                  value={formData.column_id}
+                  value={formData.column_id || ''}
                   onChange={(e) => {
-                    setFormData({...formData, column_id: e.target.value});
-                    setColumnId(e.target.value);
+                    const selectedColumnId = e.target.value;
+                    setFormData({...formData, column_id: selectedColumnId});
+                    setColumnId(selectedColumnId || null);
                   }}
                   className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                  disabled={loadingColumns}
                 >
                   <option value="">Selecione uma coluna...</option>
-                  <option value="1">✅ Ativo</option>
-                  <option value="2">❌ Inativo</option>
-                  <option value="3">⏸️ Pausado</option>
+                  {loadingColumns ? (
+                    <option value="">Carregando colunas...</option>
+                  ) : (
+                    kanbanColumns.map((column) => (
+                      <option key={column.id} value={column.id}>
+                        {column.nome}
+                      </option>
+                    ))
+                  )}
                 </select>
                 <p className="text-xs text-gray-500 mt-2">
                   💡 Esta coluna aparecerá no Trello/Kanban
