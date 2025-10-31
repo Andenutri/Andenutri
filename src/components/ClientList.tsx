@@ -3,11 +3,14 @@
 import { useState, useEffect } from 'react';
 import { getAllClientes, ClienteComFormulario } from '@/data/clientesData';
 import AddClientModal from './AddClientModal';
+import ClientDetailsModal from './ClientDetailsModal';
 
 export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [clientes, setClientes] = useState<ClienteComFormulario[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
 
   useEffect(() => {
     async function loadClientes() {
@@ -59,9 +62,12 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {clientes.map((cliente) => (
-            <a
+            <div
               key={cliente.id}
-              href={`/cliente/${cliente.id}`}
+              onClick={() => {
+                setSelectedClient(cliente);
+                setShowClientModal(true);
+              }}
               className="block bg-white rounded-xl shadow-lg p-4 md:p-6 hover:scale-105 transition-transform cursor-pointer border-l-4 border-amber-500"
             >
               <div className="mb-2">
@@ -97,7 +103,7 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
               {cliente.formulario && (
                 <p className="text-xs md:text-sm text-gray-600 mb-1">⚖️ {cliente.formulario.peso_atual}kg → {cliente.formulario.peso_desejado}kg</p>
               )}
-            </a>
+            </div>
             ))}
           </div>
         )}
@@ -108,6 +114,18 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
         isOpen={showAddClientModal}
         onClose={handleCloseModal}
       />
+
+      {/* Modal Detalhes do Cliente */}
+      {showClientModal && selectedClient && (
+        <ClientDetailsModal
+          isOpen={showClientModal}
+          onClose={() => {
+            setShowClientModal(false);
+            setSelectedClient(null);
+          }}
+          cliente={selectedClient}
+        />
+      )}
     </div>
   );
 }
