@@ -239,30 +239,62 @@ export async function addClientToColumn(columnId: string, clienteId: string) {
   try {
     const { supabase } = await import('../lib/supabase');
     
+    console.log(`🔍 Tentando adicionar cliente ${clienteId} à coluna ${columnId}`);
+    
     // Buscar a coluna atual
     const { data: coluna, error: fetchError } = await supabase
       .from('kanban_colunas')
-      .select('clientes_ids')
+      .select('clientes_ids, nome')
       .eq('id', columnId)
       .single();
 
-    if (fetchError) throw fetchError;
-
-    // Adicionar o cliente se ainda não estiver na lista
-    const clientesIds = coluna.clientes_ids || [];
-    if (!clientesIds.includes(clienteId)) {
-      const novosClientesIds = [...clientesIds, clienteId];
-      
-      const { error: updateError } = await supabase
-        .from('kanban_colunas')
-        .update({ clientes_ids: novosClientesIds })
-        .eq('id', columnId);
-
-      if (updateError) throw updateError;
-      console.log(`✅ Cliente ${clienteId} adicionado à coluna ${columnId}`);
+    if (fetchError) {
+      console.error('❌ Erro ao buscar coluna:', fetchError);
+      throw fetchError;
     }
+
+    console.log(`📋 Coluna encontrada: ${coluna.nome}, clientes_ids atual:`, coluna.clientes_ids);
+
+    // Normalizar clientes_ids (pode vir como JSONB array ou null)
+    let clientesIds: string[] = [];
+    if (coluna.clientes_ids) {
+      // Se for array, usar diretamente
+      if (Array.isArray(coluna.clientes_ids)) {
+        clientesIds = coluna.clientes_ids;
+      } else {
+        // Se não for array, tentar converter
+        clientesIds = [];
+      }
+    }
+
+    // Converter IDs para string para comparação consistente
+    const clienteIdStr = String(clienteId);
+    const clientesIdsStr = clientesIds.map(id => String(id));
+    
+    // Verificar se já está na lista (comparação como string)
+    if (clientesIdsStr.includes(clienteIdStr)) {
+      console.log(`✓ Cliente ${clienteId} já está na coluna ${coluna.nome}`);
+      return;
+    }
+
+    // Adicionar o cliente
+    const novosClientesIds = [...clientesIds, clienteId];
+    
+    console.log(`💾 Salvando novos clientes_ids:`, novosClientesIds);
+
+    const { error: updateError } = await supabase
+      .from('kanban_colunas')
+      .update({ clientes_ids: novosClientesIds })
+      .eq('id', columnId);
+
+    if (updateError) {
+      console.error('❌ Erro ao atualizar coluna:', updateError);
+      throw updateError;
+    }
+
+    console.log(`✅ Cliente ${clienteId} adicionado à coluna ${coluna.nome} (${columnId})`);
   } catch (error) {
-    console.error('Erro ao adicionar cliente à coluna:', error);
+    console.error('❌ Erro ao adicionar cliente à coluna:', error);
     throw error;
   }
 }
