@@ -210,7 +210,7 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
             {clienteParaEditar ? '✏️ Editar Cliente' : '➕ Adicionar Novo Cliente'}
           </h2>
           <button
-            onClick={onClose}
+            onClick={() => onClose()}
             className="text-3xl text-gray-400 hover:text-gray-600"
           >
             ×
