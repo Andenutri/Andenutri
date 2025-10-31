@@ -4,28 +4,32 @@ import { useState, useEffect } from 'react';
 import { getAllClientes, ClienteComFormulario } from '@/data/clientesData';
 import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
-import { syncAllColumns, Column } from '@/data/kanbanData';
+import { syncAllColumns, Column, getKanbanColumns } from '@/data/kanbanData';
 
 export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [allClientes, setAllClientes] = useState<ClienteComFormulario[]>([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
+  const [columns, setColumns] = useState<Column[]>([]);
+  const [loadingColumns, setLoadingColumns] = useState(true);
 
-  // Carregar clientes do Supabase
+  // Carregar clientes e colunas do Supabase
   useEffect(() => {
-    async function loadClientes() {
+    async function loadData() {
       setLoadingClientes(true);
+      setLoadingColumns(true);
+      
+      // Carregar clientes
       const clientesData = await getAllClientes();
       setAllClientes(clientesData);
       setLoadingClientes(false);
+      
+      // Carregar colunas do Kanban
+      const colunasData = await getKanbanColumns();
+      setColumns(colunasData);
+      setLoadingColumns(false);
     }
-    loadClientes();
+    loadData();
   }, []);
-  
-  const [columns, setColumns] = useState<Column[]>([
-    { id: '1', nome: '✅ Ativo', cor: 'green', clientes: ['1', '2', '4', '5'] },
-    { id: '2', nome: '❌ Inativo', cor: 'red', clientes: [] },
-    { id: '3', nome: '⏸️ Pausado', cor: 'yellow', clientes: ['3'] },
-  ]);
 
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [showAddColumnModal, setShowAddColumnModal] = useState(false);
@@ -377,15 +381,21 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
         {/* Modal Adicionar Cliente */}
         <AddClientModal
           isOpen={showAddClientModal}
-          onClose={() => {
+          onClose={async (data) => {
             setShowAddClientModal(false);
             setSelectedColumnForClient(null);
-            // Recarregar clientes após salvar
-            async function reloadClientes() {
+            
+            // Recarregar clientes e colunas após salvar
+            async function reloadData() {
+              // Recarregar clientes
               const clientesData = await getAllClientes();
               setAllClientes(clientesData);
+              
+              // Recarregar colunas (pode ter mudado se cliente foi adicionado a uma coluna)
+              const colunasData = await getKanbanColumns();
+              setColumns(colunasData);
             }
-            reloadClientes();
+            await reloadData();
           }}
           defaultColumn={selectedColumnForClient}
         />

@@ -6,7 +6,7 @@ import { saveCliente, isSupabaseConnected } from '@/data/clientesData';
 
 interface AddClientModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: (data?: { clienteId: string; columnId?: string | null }) => void;
   clienteParaEditar?: ClienteComFormulario | null;
   defaultSection?: string | null;
   defaultColumn?: string | null;
@@ -153,8 +153,23 @@ export default function AddClientModal({ isOpen, onClose, clienteParaEditar, def
       const resultado = await saveCliente(clienteData);
       
       if (resultado) {
+        // Se o cliente foi salvo com sucesso e há uma coluna selecionada, adicionar à coluna
+        // resultado pode ser o objeto cliente com id ou apenas um boolean true
+        const clienteId = (resultado as any)?.id || (clienteParaEditar?.id);
+        if (columnId && clienteId) {
+          try {
+            const { addClientToColumn } = await import('@/data/kanbanData');
+            await addClientToColumn(columnId, clienteId);
+            console.log('✅ Cliente adicionado à coluna do Kanban');
+          } catch (error) {
+            console.error('Erro ao adicionar cliente à coluna:', error);
+            // Não bloquear o salvamento se falhar ao adicionar à coluna
+          }
+        }
+        
         alert('✅ Cliente salvo com sucesso!');
-        onClose();
+        // Passar clienteId para o onClose para que o componente pai possa recarregar dados
+        onClose(clienteId ? { clienteId, columnId } : undefined);
       } else {
         // saveCliente já mostrou o erro, não precisa mostrar novamente
       }

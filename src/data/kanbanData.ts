@@ -213,6 +213,44 @@ export async function deleteKanbanColumn(columnId: string) {
   }
 }
 
+// Adicionar cliente a uma coluna específica
+export async function addClientToColumn(columnId: string, clienteId: string) {
+  if (!isSupabaseConnected()) {
+    console.warn('⚠️ Supabase não configurado.');
+    return;
+  }
+
+  try {
+    const { supabase } = await import('../lib/supabase');
+    
+    // Buscar a coluna atual
+    const { data: coluna, error: fetchError } = await supabase
+      .from('kanban_colunas')
+      .select('clientes_ids')
+      .eq('id', columnId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Adicionar o cliente se ainda não estiver na lista
+    const clientesIds = coluna.clientes_ids || [];
+    if (!clientesIds.includes(clienteId)) {
+      const novosClientesIds = [...clientesIds, clienteId];
+      
+      const { error: updateError } = await supabase
+        .from('kanban_colunas')
+        .update({ clientes_ids: novosClientesIds })
+        .eq('id', columnId);
+
+      if (updateError) throw updateError;
+      console.log(`✅ Cliente ${clienteId} adicionado à coluna ${columnId}`);
+    }
+  } catch (error) {
+    console.error('Erro ao adicionar cliente à coluna:', error);
+    throw error;
+  }
+}
+
 // Sincronizar todas as colunas de uma vez
 export async function syncAllColumns(columns: Column[]) {
   if (!isSupabaseConnected()) {

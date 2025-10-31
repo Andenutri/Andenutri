@@ -112,7 +112,7 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
       {/* Modal Adicionar Cliente */}
       <AddClientModal
         isOpen={showAddClientModal}
-        onClose={handleCloseModal}
+        onClose={() => handleCloseModal()}
       />
 
       {/* Modal Detalhes do Cliente */}
