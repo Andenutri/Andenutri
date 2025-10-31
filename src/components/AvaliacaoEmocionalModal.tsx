@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
+import { salvarAvaliacaoEmocional, salvarAvaliacaoComportamental } from '@/data/avaliacoesEmocionaisData';
+import { salvarFormularioPublico } from '@/data/formulariosPublicosData';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface AvaliacaoEmocionalModalProps {
   isOpen: boolean;
@@ -10,10 +13,12 @@ interface AvaliacaoEmocionalModalProps {
 }
 
 export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: AvaliacaoEmocionalModalProps) {
+  const { user } = useAuth();
   const [dadosFormulario, setDadosFormulario] = useState(cliente?.formulario || {} as any);
 
   useEffect(() => {
     if (cliente?.formulario) {
+      // Carregar dados do formulário automaticamente quando o modal abrir
       setDadosFormulario(cliente.formulario);
     }
   }, [cliente]);
@@ -51,29 +56,98 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: Av
     setSalvando(true);
     
     try {
-      // Criar objeto de avaliação completa
-      const avaliacaoEmocional = {
+      // 1. Salvar avaliação emocional no Supabase
+      const resultadoEmocional = await salvarAvaliacaoEmocional({
         cliente_id: cliente.id,
-        cliente_nome: cliente.nome,
-        data_avaliacao: new Date().toISOString(),
-        historia_pessoa: historiaPessoa,
-        
-        // Respostas do bloco emocional
-        bloco_emocional: blocoEmocional,
-        
-        // Respostas do bloco comportamental
-        bloco_comportamental: blocoComportamental,
-        
-        // Dados atualizados da pré-consulta (caso editados)
-        dados_formulario: dadosFormulario,
-      };
+        historia_pessoa: historiaPessoa || null,
+        momento_mudanca: blocoEmocional.momento_mudanca || null,
+        incomoda_espelho: blocoEmocional.incomoda_espelho || null,
+        situacao_corpo: blocoEmocional.situacao_corpo || null,
+        atrapalha_dia_dia: blocoEmocional.atrapalha_dia_dia || null,
+        maior_medo: blocoEmocional.maior_medo || null,
+        por_que_eliminar_kilos: blocoEmocional.por_que_eliminar_kilos || null,
+        tentou_antes: blocoEmocional.tentou_antes || null,
+        oque_fara_peso_desejado: blocoEmocional.oque_fara_peso_desejado || null,
+        tres_motivos: blocoEmocional.tres_motivos || null,
+        nivel_comprometimento: parseInt(blocoEmocional.nivel_comprometimento || '0'),
+        conselho_si: blocoEmocional.conselho_si || null,
+      });
 
-      // Salvar no localStorage por enquanto (depois vamos adicionar Supabase)
-      const avaliacoes = JSON.parse(localStorage.getItem('avaliacoes_emocionais') || '[]');
-      avaliacoes.push(avaliacaoEmocional);
-      localStorage.setItem('avaliacoes_emocionais', JSON.stringify(avaliacoes));
+      if (!resultadoEmocional.success) {
+        alert(`❌ Erro ao salvar avaliação emocional: ${resultadoEmocional.error}`);
+        return;
+      }
 
-      alert('✅ Avaliação emocional salva com sucesso!');
+      // 2. Salvar avaliação comportamental no Supabase
+      const resultadoComportamental = await salvarAvaliacaoComportamental({
+        cliente_id: cliente.id,
+        ponto_fraco_alimentacao: blocoComportamental.ponto_fraco_alimentacao || null,
+        organizada_ou_improvisa: blocoComportamental.organizada_ou_improvisa || null,
+        come_por_que: blocoComportamental.come_por_que || null,
+        momentos_dificeis: blocoComportamental.momentos_dificeis || null,
+        prazer_alem_comida: blocoComportamental.prazer_alem_comida || null,
+        premia_com_comida: blocoComportamental.premia_com_comida || null,
+      });
+
+      if (!resultadoComportamental.success) {
+        alert(`❌ Erro ao salvar avaliação comportamental: ${resultadoComportamental.error}`);
+        return;
+      }
+
+      // 3. Se os dados do formulário foram editados, atualizar no Supabase
+      if (user?.email && dadosFormulario) {
+        // Atualizar formulário no Supabase através da função existente
+        // Isso vai atualizar o cliente e o formulário_pre_consulta
+        try {
+          await salvarFormularioPublico(user.email, {
+            nome_completo: dadosFormulario.nome_completo || cliente.nome || '',
+            endereco_completo: dadosFormulario.endereco_completo || '',
+            whatsapp: dadosFormulario.whatsapp || cliente.whatsapp || '',
+            instagram: dadosFormulario.instagram || cliente.instagram || '',
+            idade: dadosFormulario.idade || '',
+            altura: dadosFormulario.altura || '',
+            peso_atual: dadosFormulario.peso_atual || '',
+            peso_desejado: dadosFormulario.peso_desejado || '',
+            conheceu_programa: dadosFormulario.conheceu_programa || '',
+            trabalho: dadosFormulario.trabalho || '',
+            horario_trabalho: dadosFormulario.horario_trabalho || '',
+            dias_trabalho: dadosFormulario.dias_trabalho || '',
+            hora_acorda: dadosFormulario.hora_acorda || '',
+            hora_dorme: dadosFormulario.hora_dorme || '',
+            qualidade_sono: dadosFormulario.qualidade_sono || '',
+            casada: dadosFormulario.casada || '',
+            filhos: dadosFormulario.filhos || '',
+            nomes_idades_filhos: dadosFormulario.nomes_idades_filhos || '',
+            condicao_saude: dadosFormulario.condicao_saude || '',
+            uso_medicacao: dadosFormulario.uso_medicacao || '',
+            medicacao_qual: dadosFormulario.medicacao_qual || '',
+            restricao_alimentar: dadosFormulario.restricao_alimentar || '',
+            usa_suplemento: dadosFormulario.usa_suplemento || '',
+            quais_suplementos: dadosFormulario.quais_suplementos || '',
+            sente_dor: dadosFormulario.sente_dor || '',
+            onde_dor: dadosFormulario.onde_dor || '',
+            cafe_manha: dadosFormulario.cafe_manha || '',
+            lanche_manha: dadosFormulario.lanche_manha || '',
+            almoco: dadosFormulario.almoco || '',
+            lanche_tarde: dadosFormulario.lanche_tarde || '',
+            jantar: dadosFormulario.jantar || '',
+            ceia: dadosFormulario.ceia || '',
+            alcool_freq: dadosFormulario.alcool_freq || '',
+            consumo_agua: dadosFormulario.consumo_agua || '',
+            intestino_vezes_semana: dadosFormulario.intestino_vezes_semana || '',
+            atividade_fisica: dadosFormulario.atividade_fisica || '',
+            refeicao_dificil: dadosFormulario.refeicao_dificil || '',
+            belisca_quando: dadosFormulario.belisca_quando || '',
+            muda_fins_semana: dadosFormulario.muda_fins_semana || '',
+            escala_cuidado: dadosFormulario.escala_cuidado || '',
+          });
+        } catch (error) {
+          console.warn('Erro ao atualizar formulário (pode ser normal se cliente não existir ainda):', error);
+          // Não bloquear se falhar, pois pode ser que o formulário não exista ainda
+        }
+      }
+
+      alert('✅ Avaliação emocional e comportamental salvas com sucesso!');
       onClose();
       
     } catch (error) {
@@ -171,6 +245,67 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: Av
                         type="text"
                         value={dadosFormulario.conheceu_programa || ''}
                         onChange={(e) => setDadosFormulario({...dadosFormulario, conheceu_programa: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Endereço Completo</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.endereco_completo || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, endereco_completo: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">WhatsApp</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.whatsapp || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, whatsapp: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Instagram</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.instagram || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, instagram: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Família */}
+                <div>
+                  <h3 className="font-semibold text-blue-600 mb-3">👨‍👩‍👧‍👦 Família</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">É casada?</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.casada || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, casada: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Tem filhos?</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.filhos || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, filhos: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Nomes e Idades dos Filhos</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.nomes_idades_filhos || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, nomes_idades_filhos: e.target.value})}
                         className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
                       />
                     </div>
@@ -296,6 +431,24 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: Av
                         className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
                       />
                     </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Sente dor ou desconforto?</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.sente_dor || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, sente_dor: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Onde sente dor?</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.onde_dor || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, onde_dor: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -328,6 +481,113 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: Av
                         onChange={(e) => setDadosFormulario({...dadosFormulario, almoco: e.target.value})}
                         className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
                         rows={2}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Lanche Tarde</label>
+                      <textarea 
+                        value={dadosFormulario.lanche_tarde || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, lanche_tarde: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                        rows={2}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Jantar</label>
+                      <textarea 
+                        value={dadosFormulario.jantar || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, jantar: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                        rows={2}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Ceia</label>
+                      <textarea 
+                        value={dadosFormulario.ceia || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, ceia: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                        rows={2}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Álcool ou Refrigerante (tipo e frequência)</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.alcool_freq || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, alcool_freq: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Consumo de Água (litros/dia)</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.consumo_agua || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, consumo_agua: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Intestino (vezes/semana)</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.intestino_vezes_semana || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, intestino_vezes_semana: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Atividade Física (tipo e frequência)</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.atividade_fisica || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, atividade_fisica: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Hábitos e Comportamentos */}
+                <div>
+                  <h3 className="font-semibold text-blue-600 mb-3">🧠 Hábitos e Comportamentos</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Qual refeição é mais difícil de manter saudável?</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.refeicao_dificil || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, refeicao_dificil: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">O que costuma beliscar quando está ansiosa/cansada?</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.belisca_quando || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, belisca_quando: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">O que muda na rotina nos finais de semana?</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.muda_fins_semana || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, muda_fins_semana: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Escala de cuidado (0 a 10)</label>
+                      <input 
+                        type="text"
+                        value={dadosFormulario.escala_cuidado || ''}
+                        onChange={(e) => setDadosFormulario({...dadosFormulario, escala_cuidado: e.target.value})}
+                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm bg-white"
+                        placeholder="0-10"
                       />
                     </div>
                   </div>
