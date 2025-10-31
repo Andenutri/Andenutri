@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { getClienteById, ClienteComFormulario } from '@/data/clientesData';
 import ClientDetailsModal from '@/components/ClientDetailsModal';
 import AvaliacaoFisicaEditavel from '@/components/AvaliacaoFisicaEditavel';
@@ -82,12 +83,12 @@ export default function ClientePage({ params }: { params: { id: string } }) {
               )}
             </div>
           </div>
-          <a 
-            href="/clientes"
+          <Link 
+            href="/"
             className="px-4 md:px-6 py-2 md:py-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm md:text-base"
           >
-            ← Voltar
-          </a>
+            ← Voltar ao Dashboard
+          </Link>
         </div>
       </div>
 
