@@ -320,13 +320,6 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
                         </div>
                       </div>
                     ))}
-                    
-                    {clientesNaColuna.length === 0 && (
-                      <div className="text-center py-8">
-                        <div className="text-4xl mb-2">📭</div>
-                        <p className="text-sm text-gray-400">Nenhum cliente nesta coluna</p>
-                      </div>
-                    )}
                   </div>
                 </div>
               );
