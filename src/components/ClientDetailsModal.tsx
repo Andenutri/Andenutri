@@ -574,10 +574,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
             {/* Ações */}
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-4 border-t">
               <button
-                onClick={() => {
-                  onClose();
-                  setShowPlalhaEvolucaoModal(true);
-                }}
+                onClick={() => setShowPlalhaEvolucaoModal(true)}
                 className="w-full sm:w-auto px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base"
               >
                 📊 Planilha de Evolução
