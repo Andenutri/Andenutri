@@ -199,7 +199,23 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
           <div className="flex gap-4 md:gap-6">
             {columns.map((column) => {
               const classeCor = getCoresByColumn(column.cor);
-              let clientesNaColuna = column.clientes.map(id => getClienteById(id)).filter(Boolean) as ClienteComFormulario[];
+              // Converter IDs de string para UUID se necessário e filtrar clientes válidos
+              let clientesNaColuna = column.clientes
+                .map(id => {
+                  const cliente = getClienteById(id);
+                  return cliente;
+                })
+                .filter((cliente): cliente is ClienteComFormulario => cliente !== undefined && cliente !== null);
+              
+              // Log para debug
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`Coluna ${column.nome}:`, {
+                  totalIds: column.clientes.length,
+                  clientesEncontrados: clientesNaColuna.length,
+                  ids: column.clientes,
+                  todosClientes: allClientes.map(c => ({ id: c.id, nome: c.nome }))
+                });
+              }
               
               // Filtrar por busca
               if (searchQuery) {

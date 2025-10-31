@@ -284,51 +284,90 @@ export async function associarClientesPorStatus() {
       return;
     }
 
+    console.log('🔄 Iniciando associação de clientes às colunas...');
+
     // Buscar todos os clientes do usuário
     const { data: clientes, error: clientesError } = await supabase
       .from('clientes')
-      .select('id, status_plano')
+      .select('id, nome, status_plano')
       .eq('user_id', userId);
 
-    if (clientesError) throw clientesError;
+    if (clientesError) {
+      console.error('❌ Erro ao buscar clientes:', clientesError);
+      throw clientesError;
+    }
+    
     if (!clientes || clientes.length === 0) {
-      console.log('Nenhum cliente encontrado para associar.');
+      console.log('ℹ️ Nenhum cliente encontrado para associar.');
       return;
     }
+
+    console.log(`📊 Encontrados ${clientes.length} clientes para associar.`);
 
     // Buscar todas as colunas do usuário
     const colunas = await getKanbanColumns();
     
-    // Mapear status para nomes de colunas
+    if (!colunas || colunas.length === 0) {
+      console.log('ℹ️ Nenhuma coluna encontrada.');
+      return;
+    }
+
+    console.log(`📋 Encontradas ${colunas.length} colunas:`, colunas.map(c => c.nome));
+    
+    // Mapear status para nomes de colunas (mais flexível)
     const statusMap: Record<string, string[]> = {
-      'ativo': ['✅ Ativo', 'Ativo'],
-      'inativo': ['❌ Inativo', 'Inativo'],
-      'pausado': ['⏸️ Pausado', 'Pausado'],
+      'ativo': ['ativo', '✅ ativo'],
+      'inativo': ['inativo', '❌ inativo'],
+      'pausado': ['pausado', '⏸️ pausado', 'pausa'],
     };
+
+    let clientesAssociados = 0;
 
     // Para cada cliente, encontrar a coluna correspondente e adicionar
     for (const cliente of clientes) {
-      const status = cliente.status_plano?.toLowerCase();
-      if (!status) continue;
+      const status = cliente.status_plano?.toLowerCase()?.trim();
+      if (!status) {
+        console.log(`⚠️ Cliente ${cliente.nome} não tem status_plano definido.`);
+        continue;
+      }
 
       const nomesPossiveis = statusMap[status] || [];
       
-      // Encontrar coluna que corresponda ao status
-      const colunaCorreta = colunas.find(col => 
-        nomesPossiveis.some(nome => col.nome.toLowerCase().includes(nome.toLowerCase()))
-      );
+      if (nomesPossiveis.length === 0) {
+        console.log(`⚠️ Status '${status}' não mapeado para nenhuma coluna. Cliente: ${cliente.nome}`);
+        continue;
+      }
+      
+      // Encontrar coluna que corresponda ao status (busca mais flexível)
+      const colunaCorreta = colunas.find(col => {
+        const nomeColunaLower = col.nome.toLowerCase().trim();
+        return nomesPossiveis.some(nome => nomeColunaLower.includes(nome.toLowerCase()));
+      });
 
-      if (colunaCorreta) {
-        // Verificar se cliente já está na coluna
-        if (!colunaCorreta.clientes.includes(cliente.id)) {
-          await addClientToColumn(colunaCorreta.id, cliente.id);
-        }
+      if (!colunaCorreta) {
+        console.log(`⚠️ Nenhuma coluna encontrada para status '${status}'. Cliente: ${cliente.nome}`);
+        continue;
+      }
+
+      // Verificar se cliente já está na coluna
+      if (colunaCorreta.clientes.includes(cliente.id)) {
+        console.log(`✓ Cliente ${cliente.nome} já está na coluna ${colunaCorreta.nome}`);
+        continue;
+      }
+
+      console.log(`➕ Adicionando cliente ${cliente.nome} (${cliente.id}) à coluna ${colunaCorreta.nome} (${colunaCorreta.id})`);
+      
+      try {
+        await addClientToColumn(colunaCorreta.id, cliente.id);
+        clientesAssociados++;
+      } catch (error) {
+        console.error(`❌ Erro ao adicionar cliente ${cliente.nome} à coluna:`, error);
       }
     }
 
-    console.log('✅ Clientes associados automaticamente às colunas por status.');
+    console.log(`✅ Processo concluído. ${clientesAssociados} clientes associados às colunas.`);
   } catch (error) {
-    console.error('Erro ao associar clientes por status:', error);
+    console.error('❌ Erro ao associar clientes por status:', error);
     throw error;
   }
 }
