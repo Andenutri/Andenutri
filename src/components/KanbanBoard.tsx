@@ -1,13 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllClientes, ClienteComFormulario } from '@/data/mockClientes';
+import { getAllClientes, ClienteComFormulario } from '@/data/clientesData';
 import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
 import { syncAllColumns, Column } from '@/data/kanbanData';
 
 export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
-  const allClientes = getAllClientes();
+  const [allClientes, setAllClientes] = useState<ClienteComFormulario[]>([]);
+  const [loadingClientes, setLoadingClientes] = useState(true);
+
+  // Carregar clientes do Supabase
+  useEffect(() => {
+    async function loadClientes() {
+      setLoadingClientes(true);
+      const clientesData = await getAllClientes();
+      setAllClientes(clientesData);
+      setLoadingClientes(false);
+    }
+    loadClientes();
+  }, []);
   
   const [columns, setColumns] = useState<Column[]>([
     { id: '1', nome: '✅ Ativo', cor: 'green', clientes: ['1', '2', '4', '5'] },
@@ -368,6 +380,12 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
           onClose={() => {
             setShowAddClientModal(false);
             setSelectedColumnForClient(null);
+            // Recarregar clientes após salvar
+            async function reloadClientes() {
+              const clientesData = await getAllClientes();
+              setAllClientes(clientesData);
+            }
+            reloadClientes();
           }}
           defaultColumn={selectedColumnForClient}
         />

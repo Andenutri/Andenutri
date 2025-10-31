@@ -1,12 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import { getAllClientes } from '@/data/mockClientes';
+import { useState, useEffect } from 'react';
+import { getAllClientes, ClienteComFormulario } from '@/data/clientesData';
 import AddClientModal from './AddClientModal';
 
 export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
-  const clientes = getAllClientes();
+  const [clientes, setClientes] = useState<ClienteComFormulario[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddClientModal, setShowAddClientModal] = useState(false);
+
+  useEffect(() => {
+    async function loadClientes() {
+      setLoading(true);
+      const clientesData = await getAllClientes();
+      setClientes(clientesData);
+      setLoading(false);
+    }
+    loadClientes();
+  }, []);
+
+  // Recarregar quando fechar o modal (após adicionar cliente)
+  const handleCloseModal = () => {
+    setShowAddClientModal(false);
+    // Recarregar clientes após salvar
+    async function reloadClientes() {
+      const clientesData = await getAllClientes();
+      setClientes(clientesData);
+    }
+    reloadClientes();
+  };
 
   return (
     <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-0 md:ml-80' : 'ml-0'}`}>
@@ -24,8 +46,19 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
       </div>
       
       <div className="p-4 md:p-6 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {clientes.map((cliente) => (
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-700"></div>
+            <p className="mt-4 text-gray-600">Carregando clientes...</p>
+          </div>
+        ) : clientes.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-600 text-lg">Nenhum cliente cadastrado ainda.</p>
+            <p className="text-gray-500 text-sm mt-2">Clique em "➕ Adicionar Cliente" para começar.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+            {clientes.map((cliente) => (
             <a
               key={cliente.id}
               href={`/cliente/${cliente.id}`}
@@ -65,14 +98,15 @@ export default function ClientList({ sidebarOpen }: { sidebarOpen: boolean }) {
                 <p className="text-xs md:text-sm text-gray-600 mb-1">⚖️ {cliente.formulario.peso_atual}kg → {cliente.formulario.peso_desejado}kg</p>
               )}
             </a>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Modal Adicionar Cliente */}
       <AddClientModal
         isOpen={showAddClientModal}
-        onClose={() => setShowAddClientModal(false)}
+        onClose={handleCloseModal}
       />
     </div>
   );
