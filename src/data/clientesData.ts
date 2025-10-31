@@ -335,11 +335,15 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
         throw new Error(mensagem);
       }
 
+      // Garantir que nome e telefone existem após validação
+      const nomeValidado = cliente.nome?.trim() || '';
+      const telefoneValidado = cliente.telefone?.trim() || '';
+
       // Criar novo cliente - user_id será preenchido pelo trigger automaticamente
       // Sanitizar dados para remover campos inválidos (como column_id)
       const dadosParaInserir = sanitizarDadosCliente({
-        nome: cliente.nome.trim(),
-        telefone: cliente.telefone.trim(),
+        nome: nomeValidado,
+        telefone: telefoneValidado,
         email: cliente.email?.trim() || null, // Opcional
         whatsapp: cliente.whatsapp?.trim() || null, // Opcional
         instagram: cliente.instagram?.trim() || null, // Opcional
