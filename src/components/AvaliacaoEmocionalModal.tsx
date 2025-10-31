@@ -59,18 +59,18 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: Av
       // 1. Salvar avaliação emocional no Supabase
       const resultadoEmocional = await salvarAvaliacaoEmocional({
         cliente_id: cliente.id,
-        historia_pessoa: historiaPessoa || null,
-        momento_mudanca: blocoEmocional.momento_mudanca || null,
-        incomoda_espelho: blocoEmocional.incomoda_espelho || null,
-        situacao_corpo: blocoEmocional.situacao_corpo || null,
-        atrapalha_dia_dia: blocoEmocional.atrapalha_dia_dia || null,
-        maior_medo: blocoEmocional.maior_medo || null,
-        por_que_eliminar_kilos: blocoEmocional.por_que_eliminar_kilos || null,
-        tentou_antes: blocoEmocional.tentou_antes || null,
-        oque_fara_peso_desejado: blocoEmocional.oque_fara_peso_desejado || null,
-        tres_motivos: blocoEmocional.tres_motivos || null,
+        historia_pessoa: historiaPessoa || undefined,
+        momento_mudanca: blocoEmocional.momento_mudanca || undefined,
+        incomoda_espelho: blocoEmocional.incomoda_espelho || undefined,
+        situacao_corpo: blocoEmocional.situacao_corpo || undefined,
+        atrapalha_dia_dia: blocoEmocional.atrapalha_dia_dia || undefined,
+        maior_medo: blocoEmocional.maior_medo || undefined,
+        por_que_eliminar_kilos: blocoEmocional.por_que_eliminar_kilos || undefined,
+        tentou_antes: blocoEmocional.tentou_antes || undefined,
+        oque_fara_peso_desejado: blocoEmocional.oque_fara_peso_desejado || undefined,
+        tres_motivos: blocoEmocional.tres_motivos || undefined,
         nivel_comprometimento: parseInt(blocoEmocional.nivel_comprometimento || '0'),
-        conselho_si: blocoEmocional.conselho_si || null,
+        conselho_si: blocoEmocional.conselho_si || undefined,
       });
 
       if (!resultadoEmocional.success) {
@@ -81,12 +81,12 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: Av
       // 2. Salvar avaliação comportamental no Supabase
       const resultadoComportamental = await salvarAvaliacaoComportamental({
         cliente_id: cliente.id,
-        ponto_fraco_alimentacao: blocoComportamental.ponto_fraco_alimentacao || null,
-        organizada_ou_improvisa: blocoComportamental.organizada_ou_improvisa || null,
-        come_por_que: blocoComportamental.come_por_que || null,
-        momentos_dificeis: blocoComportamental.momentos_dificeis || null,
-        prazer_alem_comida: blocoComportamental.prazer_alem_comida || null,
-        premia_com_comida: blocoComportamental.premia_com_comida || null,
+        ponto_fraco_alimentacao: blocoComportamental.ponto_fraco_alimentacao || undefined,
+        organizada_ou_improvisa: blocoComportamental.organizada_ou_improvisa || undefined,
+        come_por_que: blocoComportamental.come_por_que || undefined,
+        momentos_dificeis: blocoComportamental.momentos_dificeis || undefined,
+        prazer_alem_comida: blocoComportamental.prazer_alem_comida || undefined,
+        premia_com_comida: blocoComportamental.premia_com_comida || undefined,
       });
 
       if (!resultadoComportamental.success) {
