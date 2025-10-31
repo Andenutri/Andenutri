@@ -4,23 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getClienteById, ClienteComFormulario } from '@/data/clientesData';
 import ClientDetailsModal from '@/components/ClientDetailsModal';
-import AvaliacaoFisicaEditavel from '@/components/AvaliacaoFisicaEditavel';
-
-export default function ClientePage({ params }: { params: { id: string } }) {
-  const [isModalOpen, setIsModalOpen] = useState(true); // Abrir modal automaticamente
-  const [cliente, setCliente] = useState<ClienteComFormulario | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function loadCliente() {
-      setLoading(true);
-      const clienteData = await getClienteById(params.id);
-      setCliente(clienteData || null);
-      setLoading(false);
-      // Se encontrar o cliente, o modal já está configurado para abrir automaticamente
-    }
-    loadCliente();
-  }, [params.id]);
 
 export default function ClientePage({ params }: { params: { id: string } }) {
   const [isModalOpen, setIsModalOpen] = useState(true); // Abrir modal automaticamente
@@ -81,4 +64,3 @@ export default function ClientePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
