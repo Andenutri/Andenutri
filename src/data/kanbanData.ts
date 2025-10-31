@@ -267,6 +267,72 @@ export async function addClientToColumn(columnId: string, clienteId: string) {
   }
 }
 
+// Associar clientes existentes automaticamente às colunas baseado no status_plano
+export async function associarClientesPorStatus() {
+  if (!isSupabaseConnected()) {
+    console.warn('⚠️ Supabase não configurado.');
+    return;
+  }
+
+  try {
+    const { supabase } = await import('../lib/supabase');
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.warn('Usuário não autenticado.');
+      return;
+    }
+
+    // Buscar todos os clientes do usuário
+    const { data: clientes, error: clientesError } = await supabase
+      .from('clientes')
+      .select('id, status_plano')
+      .eq('user_id', userId);
+
+    if (clientesError) throw clientesError;
+    if (!clientes || clientes.length === 0) {
+      console.log('Nenhum cliente encontrado para associar.');
+      return;
+    }
+
+    // Buscar todas as colunas do usuário
+    const colunas = await getKanbanColumns();
+    
+    // Mapear status para nomes de colunas
+    const statusMap: Record<string, string[]> = {
+      'ativo': ['✅ Ativo', 'Ativo'],
+      'inativo': ['❌ Inativo', 'Inativo'],
+      'pausado': ['⏸️ Pausado', 'Pausado'],
+    };
+
+    // Para cada cliente, encontrar a coluna correspondente e adicionar
+    for (const cliente of clientes) {
+      const status = cliente.status_plano?.toLowerCase();
+      if (!status) continue;
+
+      const nomesPossiveis = statusMap[status] || [];
+      
+      // Encontrar coluna que corresponda ao status
+      const colunaCorreta = colunas.find(col => 
+        nomesPossiveis.some(nome => col.nome.toLowerCase().includes(nome.toLowerCase()))
+      );
+
+      if (colunaCorreta) {
+        // Verificar se cliente já está na coluna
+        if (!colunaCorreta.clientes.includes(cliente.id)) {
+          await addClientToColumn(colunaCorreta.id, cliente.id);
+        }
+      }
+    }
+
+    console.log('✅ Clientes associados automaticamente às colunas por status.');
+  } catch (error) {
+    console.error('Erro ao associar clientes por status:', error);
+    throw error;
+  }
+}
+
 // Sincronizar todas as colunas de uma vez
 export async function syncAllColumns(columns: Column[]) {
   if (!isSupabaseConnected()) {
@@ -301,4 +367,3 @@ export async function syncAllColumns(columns: Column[]) {
     throw error;
   }
 }
-

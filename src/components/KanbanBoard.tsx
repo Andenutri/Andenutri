@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { getAllClientes, ClienteComFormulario } from '@/data/clientesData';
 import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
-import { syncAllColumns, Column, getKanbanColumns, saveKanbanColumn } from '@/data/kanbanData';
+import { syncAllColumns, Column, getKanbanColumns, saveKanbanColumn, associarClientesPorStatus } from '@/data/kanbanData';
 
 export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [allClientes, setAllClientes] = useState<ClienteComFormulario[]>([]);
@@ -27,6 +27,16 @@ export default function KanbanBoard({ sidebarOpen }: { sidebarOpen: boolean }) {
       const colunasData = await getKanbanColumns();
       setColumns(colunasData);
       setLoadingColumns(false);
+      
+      // Associar clientes existentes automaticamente às colunas (apenas uma vez)
+      try {
+        await associarClientesPorStatus();
+        // Recarregar colunas após associação
+        const colunasAtualizadas = await getKanbanColumns();
+        setColumns(colunasAtualizadas);
+      } catch (error) {
+        console.error('Erro ao associar clientes:', error);
+      }
     }
     loadData();
   }, []);
