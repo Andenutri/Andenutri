@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
 import { saveCliente } from '@/data/clientesData';
 
@@ -18,19 +18,47 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
     whatsapp: cliente?.whatsapp || cliente?.formulario?.whatsapp || '',
     instagram: cliente?.instagram || cliente?.formulario?.instagram || '',
     pais_telefone: '+55',
+    perfil: (cliente as any)?.perfil || '',
     endereco_completo: cliente?.endereco_completo || cliente?.formulario?.endereco_completo || '',
     pais: 'Brasil',
     estado: '',
     cidade: '',
     status_programa: cliente?.status_plano || 'ativo',
-    status_herbalife: 'nao_pertence',
-    status_challenge: 'nao_participa',
-    herbalife_usuario: '',
-    herbalife_senha: '',
-    indicado_por: '',
+    status_herbalife: (cliente as any)?.status_herbalife || 'nao_pertence',
+    status_challenge: (cliente as any)?.status_challenge || 'nao_participa',
+    herbalife_usuario: (cliente as any)?.herbalife_usuario || '',
+    herbalife_senha: (cliente as any)?.herbalife_senha || '',
+    indicado_por: (cliente as any)?.indicado_por || '',
+    is_lead: (cliente as any)?.is_lead || false,
   });
 
   const [saving, setSaving] = useState(false);
+
+  // Atualizar formData quando o cliente mudar ou o modal abrir
+  useEffect(() => {
+    if (isOpen && cliente) {
+      setFormData({
+        nome: cliente?.nome || cliente?.formulario?.nome_completo || '',
+        email: cliente?.email || '',
+        telefone: cliente?.telefone || '',
+        whatsapp: cliente?.whatsapp || cliente?.formulario?.whatsapp || '',
+        instagram: cliente?.instagram || cliente?.formulario?.instagram || '',
+        pais_telefone: '+55',
+        perfil: (cliente as any)?.perfil || '',
+        endereco_completo: cliente?.endereco_completo || cliente?.formulario?.endereco_completo || '',
+        pais: 'Brasil',
+        estado: '',
+        cidade: '',
+        status_programa: cliente?.status_plano || 'ativo',
+        status_herbalife: (cliente as any)?.status_herbalife || 'nao_pertence',
+        status_challenge: (cliente as any)?.status_challenge || 'nao_participa',
+        herbalife_usuario: (cliente as any)?.herbalife_usuario || '',
+        herbalife_senha: (cliente as any)?.herbalife_senha || '',
+        indicado_por: (cliente as any)?.indicado_por || '',
+        is_lead: (cliente as any)?.is_lead || false,
+      });
+    }
+  }, [isOpen, cliente]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,11 +71,17 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
         telefone: formData.telefone,
         whatsapp: formData.whatsapp,
         instagram: formData.instagram,
+        perfil: formData.perfil || undefined,
         endereco_completo: formData.endereco_completo,
         pais: formData.pais,
         estado: formData.estado,
         cidade: formData.cidade,
         status_plano: formData.status_programa as 'ativo' | 'inativo' | 'pausado',
+        status_herbalife: formData.status_herbalife,
+        herbalife_usuario: formData.herbalife_usuario || undefined,
+        herbalife_senha: formData.herbalife_senha || undefined,
+        indicado_por: formData.indicado_por || undefined,
+        is_lead: formData.is_lead,
       };
 
       if (cliente?.id) {
@@ -150,6 +184,18 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
                 />
               </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">👤 Perfil/Anotações</label>
+                <textarea
+                  value={formData.perfil}
+                  onChange={(e) => setFormData({ ...formData, perfil: e.target.value })}
+                  placeholder="Digite informações importantes sobre esta pessoa para te lembrar (ex: interesses, personalidade, observações, etc.)"
+                  rows={4}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">📝 Use este campo para anotações pessoais sobre o cliente</p>
+              </div>
             </div>
           </div>
 
@@ -236,6 +282,18 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Status Challenge</label>
+                <select
+                  value={formData.status_challenge}
+                  onChange={(e) => setFormData({ ...formData, status_challenge: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none"
+                >
+                  <option value="nao_participa">❌ Não participa</option>
+                  <option value="participa">✅ Participa</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Usuário Herbalife</label>
                 <input
                   type="text"
@@ -264,6 +322,18 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
                   placeholder="Nome de quem indicou o cliente"
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none"
                 />
+              </div>
+
+              <div className="col-span-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_lead}
+                    onChange={(e) => setFormData({ ...formData, is_lead: e.target.checked })}
+                    className="w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">📊 É Lead (Cliente em potencial)</span>
+                </label>
               </div>
             </div>
           </div>
