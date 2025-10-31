@@ -588,12 +588,25 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
               </button>
               <button
                 onClick={() => {
-                  onClose();
-                  setShowEditClientModal(true);
+                  // Copiar link de reavaliação automaticamente
+                  const codigo = cliente?.codigo_reavaliacao || (cliente?.id ? cliente.id.substring(0, 8).toUpperCase() : '');
+                  if (codigo) {
+                    const url = typeof window !== 'undefined' 
+                      ? `${window.location.origin}/reavaliacao/${codigo}`
+                      : `https://andenutri.com/reavaliacao/${codigo}`;
+                    
+                    navigator.clipboard.writeText(url).then(() => {
+                      alert(`✅ Link de reavaliação copiado!\n\n${url}\n\nEnvie este link para ${cliente?.nome} preencher antes da consulta.`);
+                    }).catch(() => {
+                      alert(`⚠️ Erro ao copiar. Acesse o link manualmente:\n\n${url}`);
+                    });
+                  } else {
+                    alert('⚠️ Código de reavaliação não encontrado para este cliente.');
+                  }
                 }}
-                className="w-full sm:flex-1 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base"
+                className="w-full sm:flex-1 px-4 md:px-6 py-2 md:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:scale-105 transition-all shadow-lg text-sm md:text-base"
               >
-                ✏️ Editar Cliente
+                📅 Agendar Reavaliação
               </button>
               <button
                 onClick={onClose}
