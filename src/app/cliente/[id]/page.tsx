@@ -1,15 +1,35 @@
 'use client';
 
-import { useState } from 'react';
-import { getAllClientes } from '@/data/mockClientes';
+import { useState, useEffect } from 'react';
+import { getClienteById, ClienteComFormulario } from '@/data/clientesData';
 import ClientDetailsModal from '@/components/ClientDetailsModal';
 import AvaliacaoFisicaEditavel from '@/components/AvaliacaoFisicaEditavel';
 
 export default function ClientePage({ params }: { params: { id: string } }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
-  const allClientes = getAllClientes();
-  const cliente = allClientes.find(c => c.id === params.id);
+  const [cliente, setCliente] = useState<ClienteComFormulario | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadCliente() {
+      setLoading(true);
+      const clienteData = await getClienteById(params.id);
+      setCliente(clienteData || null);
+      setLoading(false);
+    }
+    loadCliente();
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-amber-50 via-amber-100 to-amber-200 flex items-center justify-center">
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-700 mb-4"></div>
+          <p className="text-gray-600">Carregando cliente...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!cliente) {
     return (
@@ -17,7 +37,7 @@ export default function ClientePage({ params }: { params: { id: string } }) {
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="text-6xl mb-4">😕</div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Cliente não encontrado</h1>
-          <p className="text-gray-600">O cliente que você está procurando não existe.</p>
+          <p className="text-gray-600">O cliente que você está procurando não existe ou não pertence à sua conta.</p>
           <a href="/" className="inline-block mt-4 px-6 py-3 bg-amber-600 text-white rounded-lg hover:bg-amber-700">
             Voltar ao Dashboard
           </a>
