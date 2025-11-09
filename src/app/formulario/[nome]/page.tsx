@@ -129,6 +129,7 @@ export default function FormularioPublicoPage() {
     e.preventDefault();
     setSubmitting(true);
     setError('');
+    setSuccess(false);
 
     if (!formData.nome_completo || (!formData.email && !formData.whatsapp)) {
       setError('Por favor, preencha pelo menos nome completo e email ou WhatsApp');
@@ -136,10 +137,20 @@ export default function FormularioPublicoPage() {
       return;
     }
 
+    if (!nutricionistaEmail) {
+      setError('Erro: Email do nutricionista não encontrado. Verifique a URL.');
+      setSubmitting(false);
+      return;
+    }
+
+    console.log('📤 Enviando formulário...');
     const resultado = await salvarFormularioPublico(nutricionistaEmail, formData);
+    console.log('📥 Resultado do salvamento:', resultado);
 
     if (resultado.success) {
+      console.log('✅ Sucesso! Exibindo mensagem de parabéns...');
       setSuccess(true);
+      setError('');
       // Limpar formulário
       setFormData({
         nome_completo: '',
@@ -185,7 +196,9 @@ export default function FormularioPublicoPage() {
         escala_cuidado: '',
       });
     } else {
+      console.error('❌ Erro ao salvar formulário:', resultado.error);
       setError(resultado.error || 'Erro ao enviar formulário. Tente novamente.');
+      setSuccess(false);
     }
 
     setSubmitting(false);
@@ -294,6 +307,18 @@ export default function FormularioPublicoPage() {
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  placeholder="seu@email.com"
+                />
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">WhatsApp</label>
@@ -302,6 +327,7 @@ export default function FormularioPublicoPage() {
                     value={formData.whatsapp}
                     onChange={(e) => handleChange('whatsapp', e.target.value)}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="(00) 00000-0000"
                   />
                 </div>
                 <div>
@@ -311,6 +337,7 @@ export default function FormularioPublicoPage() {
                     value={formData.instagram}
                     onChange={(e) => handleChange('instagram', e.target.value)}
                     className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                    placeholder="@seuinstagram"
                   />
                 </div>
               </div>

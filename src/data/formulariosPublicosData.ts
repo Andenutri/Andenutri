@@ -91,20 +91,27 @@ export async function salvarFormularioPublico(
   dados: FormularioPublicoData
 ): Promise<{ success: boolean; clienteId?: string; error?: string }> {
   try {
-    // 1. Buscar o user_id pelo email do nutricionista
-    // Por enquanto, vamos buscar diretamente na tabela auth.users via RPC
-    // ou criar uma função que faz isso
+    console.log('📝 Iniciando salvamento de formulário público...');
+    console.log('📧 Email do nutricionista:', emailNutricionista);
+    console.log('📋 Dados do formulário:', dados);
     
-    // Solução: Criar função RPC no Supabase que busca user_id por email
+    // 1. Buscar o user_id pelo email do nutricionista
     const { data: userIdData, error: userIdError } = await supabase.rpc('buscar_user_id_por_email', {
       email_param: emailNutricionista.toLowerCase(),
     });
 
     let userId: string | null = null;
 
-    if (userIdError || !userIdData) {
-      // Fallback: tentar buscar diretamente de clientes existentes deste usuário
-      // Se não encontrar, retornar erro
+    if (userIdError) {
+      console.error('❌ Erro ao buscar user_id:', userIdError);
+      return {
+        success: false,
+        error: `Erro ao buscar nutricionista: ${userIdError.message}`,
+      };
+    }
+
+    if (!userIdData) {
+      console.error('❌ User ID não encontrado para email:', emailNutricionista);
       return {
         success: false,
         error: 'Nutricionista não encontrado. Verifique o email.',
@@ -112,23 +119,34 @@ export async function salvarFormularioPublico(
     }
 
     userId = userIdData as string;
+    console.log('✅ User ID encontrado:', userId);
 
     // 2. Verificar se cliente já existe (por email ou whatsapp)
     let clienteId: string;
     
     if (dados.email || dados.whatsapp) {
-      const { data: clienteExistente } = await supabase
+      // Construir query OR corretamente
+      let orQuery = '';
+      if (dados.email && dados.whatsapp) {
+        orQuery = `email.eq.${dados.email},whatsapp.eq.${dados.whatsapp}`;
+      } else if (dados.email) {
+        orQuery = `email.eq.${dados.email}`;
+      } else if (dados.whatsapp) {
+        orQuery = `whatsapp.eq.${dados.whatsapp}`;
+      }
+      
+      console.log('🔍 Buscando cliente existente com query:', orQuery);
+      
+      const { data: clienteExistente, error: buscaError } = await supabase
         .from('clientes')
         .select('id, nome, email, whatsapp, instagram, endereco_completo')
-        .or(
-          (dados.email && dados.whatsapp)
-            ? `email.eq.${dados.email},whatsapp.eq.${dados.whatsapp}`
-            : dados.email
-            ? `email.eq.${dados.email}`
-            : `whatsapp.eq.${dados.whatsapp}`
-        )
+        .or(orQuery)
         .eq('user_id', userId)
         .maybeSingle();
+      
+      if (buscaError) {
+        console.error('❌ Erro ao buscar cliente existente:', buscaError);
+      }
 
       if (clienteExistente) {
         // Atualizar cliente existente com dados do formulário
@@ -167,8 +185,13 @@ export async function salvarFormularioPublico(
           .eq('id', clienteId);
           
         if (updateError) {
-          console.error('Erro ao atualizar cliente:', updateError);
+          console.error('❌ Erro ao atualizar cliente:', updateError);
+          return {
+            success: false,
+            error: `Erro ao atualizar cliente: ${updateError.message}`,
+          };
         }
+        console.log('✅ Cliente atualizado:', clienteId);
       } else {
         // Criar novo cliente
         const { data: novoCliente, error: clienteError } = await supabase
@@ -187,6 +210,7 @@ export async function salvarFormularioPublico(
           .single();
 
         if (clienteError || !novoCliente) {
+          console.error('❌ Erro ao criar cliente:', clienteError);
           return {
             success: false,
             error: clienteError?.message || 'Erro ao criar cliente',
@@ -194,6 +218,7 @@ export async function salvarFormularioPublico(
         }
         
         clienteId = novoCliente.id;
+        console.log('✅ Novo cliente criado:', clienteId);
       }
     } else {
       // Se não tem email nem whatsapp, criar novo cliente
@@ -213,6 +238,7 @@ export async function salvarFormularioPublico(
         .single();
 
       if (clienteError || !novoCliente) {
+        console.error('❌ Erro ao criar cliente (sem email/whatsapp):', clienteError);
         return {
           success: false,
           error: clienteError?.message || 'Erro ao criar cliente',
@@ -220,14 +246,26 @@ export async function salvarFormularioPublico(
       }
       
       clienteId = novoCliente.id;
+      console.log('✅ Novo cliente criado (sem email/whatsapp):', clienteId);
     }
 
     // 3. Verificar se formulário já existe para este cliente
-    const { data: formularioExistente } = await supabase
+    console.log('🔍 Verificando se formulário já existe para cliente:', clienteId);
+    const { data: formularioExistente, error: buscaFormError } = await supabase
       .from('formularios_pre_consulta')
       .select('id')
       .eq('cliente_id', clienteId)
       .maybeSingle();
+    
+    if (buscaFormError) {
+      console.error('❌ Erro ao buscar formulário existente:', buscaFormError);
+    }
+    
+    if (formularioExistente) {
+      console.log('📝 Formulário existente encontrado, será atualizado:', formularioExistente.id);
+    } else {
+      console.log('📝 Criando novo formulário');
+    }
 
     // 4. Criar ou atualizar formulário de pré-consulta
     const dadosFormulario = {
@@ -290,7 +328,7 @@ export async function salvarFormularioPublico(
     }
 
     if (formularioError) {
-      // Não deletar cliente se formulário falhar - pode ser atualização
+      console.error('❌ Erro ao salvar formulário:', formularioError);
       return {
         success: false,
         error: formularioError.message || 'Erro ao salvar formulário',
@@ -300,7 +338,7 @@ export async function salvarFormularioPublico(
     // 5. O campo formulario_preenchido é calculado dinamicamente em getAllClientes
     // baseado na existência de um formulário na tabela formularios_pre_consulta
     // Portanto, não precisamos atualizar nenhum campo adicional aqui
-    console.log(`✅ Formulário salvo para cliente ${clienteId}. Ele aparecerá automaticamente na lista "Aguardando Avaliação".`);
+    console.log(`✅ Formulário salvo com sucesso para cliente ${clienteId}. Ele aparecerá automaticamente na lista "Aguardando Avaliação".`);
 
     return {
       success: true,
