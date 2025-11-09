@@ -104,6 +104,23 @@ export async function salvarFormularioPublico(
 
     if (userIdError) {
       console.error('❌ Erro ao buscar user_id:', userIdError);
+      
+      // Detectar problemas de SSL/certificado
+      const errorMessage = userIdError.message || '';
+      if (errorMessage.includes('CERT') || errorMessage.includes('SSL') || errorMessage.includes('certificate')) {
+        return {
+          success: false,
+          error: 'Erro de certificado SSL. Isso pode ser causado por antivírus/firewall (ex: Fortinet). Tente desabilitar temporariamente ou adicionar exceção para *.supabase.co',
+        };
+      }
+      
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        return {
+          success: false,
+          error: 'Erro de conexão. Verifique sua internet ou se há firewall bloqueando a conexão com Supabase.',
+        };
+      }
+      
       return {
         success: false,
         error: `Erro ao buscar nutricionista: ${userIdError.message}`,

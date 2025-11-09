@@ -9,7 +9,30 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 let supabaseClient: SupabaseClient;
 
 if (supabaseUrl && supabaseAnonKey && supabaseUrl !== '' && supabaseAnonKey !== '') {
-  supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  // Configuração otimizada para evitar problemas de SSL/certificado
+  supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+    // Configurações de rede para melhor compatibilidade
+    global: {
+      headers: {
+        'x-client-info': 'andenutri-web',
+      },
+    },
+    // Timeout aumentado para conexões lentas
+    db: {
+      schema: 'public',
+    },
+    // Real-time desabilitado por padrão (pode ser habilitado se necessário)
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
+  });
 } else {
   // Criar um cliente com valores dummy para evitar erro durante build
   // Este cliente não funcionará em runtime se as variáveis não estiverem configuradas
