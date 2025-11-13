@@ -65,6 +65,15 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
     setSaving(true);
 
     try {
+      // PROTEÇÃO: Se cliente tem data_compra_programa, NUNCA pode ser lead
+      const temDataCompra = (cliente as any)?.data_compra_programa;
+      let isLeadFinal = formData.is_lead;
+      
+      if (temDataCompra && formData.is_lead === true) {
+        alert('⚠️ Este cliente comprou o programa de 90 dias. Não é possível marcá-lo como Lead. Ele permanecerá como Cliente (mesmo que inativo).');
+        isLeadFinal = false;
+      }
+
       const clienteData: any = {
         nome: formData.nome,
         email: formData.email,
@@ -81,7 +90,7 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
         herbalife_usuario: formData.herbalife_usuario || undefined,
         herbalife_senha: formData.herbalife_senha || undefined,
         indicado_por: formData.indicado_por || undefined,
-        is_lead: formData.is_lead,
+        is_lead: isLeadFinal,
       };
 
       if (cliente?.id) {
@@ -325,14 +334,26 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
               </div>
 
               <div className="col-span-2">
-                <label className="flex items-center gap-2 cursor-pointer">
+                <label className={`flex items-center gap-2 ${(cliente as any)?.data_compra_programa ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                   <input
                     type="checkbox"
                     checked={formData.is_lead}
-                    onChange={(e) => setFormData({ ...formData, is_lead: e.target.checked })}
-                    className="w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+                    disabled={!!(cliente as any)?.data_compra_programa}
+                    onChange={(e) => {
+                      if (!(cliente as any)?.data_compra_programa) {
+                        setFormData({ ...formData, is_lead: e.target.checked });
+                      }
+                    }}
+                    className="w-5 h-5 text-amber-600 border-gray-300 rounded focus:ring-amber-500 disabled:opacity-50"
                   />
-                  <span className="text-sm font-medium text-gray-700">📊 É Lead (Cliente em potencial)</span>
+                  <span className="text-sm font-medium text-gray-700">
+                    📊 É Lead (Cliente em potencial)
+                    {(cliente as any)?.data_compra_programa && (
+                      <span className="ml-2 text-xs text-red-600 font-semibold">
+                        (Cliente que comprou programa não pode ser Lead)
+                      </span>
+                    )}
+                  </span>
                 </label>
               </div>
             </div>
