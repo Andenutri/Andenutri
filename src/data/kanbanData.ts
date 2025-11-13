@@ -5,6 +5,7 @@ export interface Column {
   nome: string;
   cor: string;
   clientes: string[];
+  ordem?: number; // Ordem da coluna (opcional para compatibilidade)
 }
 
 interface KanbanColumn {
@@ -113,6 +114,7 @@ export async function getKanbanColumns(): Promise<Column[]> {
       nome: col.nome,
       cor: col.cor,
       clientes: col.clientes_ids || [],
+      ordem: col.ordem,
     }));
   } catch (error) {
     console.error('Erro ao buscar colunas do Supabase:', error);
