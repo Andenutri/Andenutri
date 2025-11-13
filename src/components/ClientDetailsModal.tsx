@@ -12,6 +12,8 @@ import EditarAvaliacaoEmocionalModal from './EditarAvaliacaoEmocionalModal';
 import AvaliacaoFisicaEditavel from './AvaliacaoFisicaEditavel';
 import AgendarReavaliacaoModal from './AgendarReavaliacaoModal';
 import { getReavaliacoesCliente, type ReavaliacaoResposta } from '@/data/reavaliacoesData';
+import { getAvaliacoesByCliente } from '@/data/avaliacoesData';
+import { getAvaliacoesEmocionaisCliente, getAvaliacoesComportamentaisCliente } from '@/data/avaliacoesEmocionaisData';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -41,6 +43,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
   const [sectionToEdit, setSectionToEdit] = useState<string | null>(null);
   const [reavaliacoes, setReavaliacoes] = useState<ReavaliacaoResposta[]>([]);
   const [loadingReavaliacoes, setLoadingReavaliacoes] = useState(false);
+  const [copiando, setCopiando] = useState(false);
 
   const toggleSection = (section: keyof typeof sectionsExpanded) => {
     setSectionsExpanded(prev => ({
@@ -70,12 +73,29 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
         <div className="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] md:max-h-[95vh] overflow-y-auto">
           <div className="sticky top-0 bg-white border-b border-gray-200 px-4 md:px-6 py-3 md:py-4 flex justify-between items-center z-10">
             <h2 className="text-xl md:text-2xl font-bold text-amber-700">Detalhes do Cliente</h2>
-            <button
-              onClick={onClose}
-              className="text-3xl text-gray-400 hover:text-gray-600"
-            >
-              ×
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={copiarFicha}
+                disabled={copiando}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold disabled:opacity-50 flex items-center gap-2"
+                title="Copiar ficha completa para área de transferência"
+              >
+                {copiando ? '⏳' : '📋'} {copiando ? 'Copiando...' : 'Copiar Ficha'}
+              </button>
+              <button
+                onClick={exportarFicha}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-semibold flex items-center gap-2"
+                title="Exportar ficha completa como arquivo de texto"
+              >
+                💾 Exportar
+              </button>
+              <button
+                onClick={onClose}
+                className="text-3xl text-gray-400 hover:text-gray-600"
+              >
+                ×
+              </button>
+            </div>
           </div>
 
           <div className="p-4 md:p-6 space-y-4">

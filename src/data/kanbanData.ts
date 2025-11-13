@@ -394,7 +394,7 @@ export async function removeClientFromColumn(columnId: string, clienteId: string
     const clientesIdsStr = clientesIds.map((id: any) => String(id));
     
     // Remover o cliente se estiver na lista
-    const novosClientesIds = clientesIdsStr.filter(id => id !== clienteIdStr);
+    const novosClientesIds = clientesIdsStr.filter((id: string) => id !== clienteIdStr);
     
     console.log(`💾 Removendo cliente. Antes: ${clientesIdsStr.length}, Depois: ${novosClientesIds.length}`);
 
