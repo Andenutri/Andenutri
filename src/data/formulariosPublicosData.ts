@@ -346,16 +346,39 @@ export async function salvarFormularioPublico(
 
     if (formularioError) {
       console.error('❌ Erro ao salvar formulário:', formularioError);
+      console.error('❌ Detalhes do erro:', JSON.stringify(formularioError, null, 2));
       return {
         success: false,
         error: formularioError.message || 'Erro ao salvar formulário',
       };
     }
 
-    // 5. O campo formulario_preenchido é calculado dinamicamente em getAllClientes
+    // 5. Verificar se o formulário foi realmente salvo
+    console.log('🔍 Verificando se formulário foi salvo...');
+    const { data: formularioVerificado, error: verificaError } = await supabase
+      .from('formularios_pre_consulta')
+      .select('id, cliente_id, nome_completo, data_preenchimento')
+      .eq('cliente_id', clienteId)
+      .maybeSingle();
+    
+    if (verificaError) {
+      console.error('⚠️ Erro ao verificar formulário salvo:', verificaError);
+    } else if (formularioVerificado) {
+      console.log('✅ Formulário confirmado no banco:', {
+        id: formularioVerificado.id,
+        cliente_id: formularioVerificado.cliente_id,
+        nome: formularioVerificado.nome_completo,
+        data: formularioVerificado.data_preenchimento,
+      });
+    } else {
+      console.warn('⚠️ Formulário não encontrado após salvar. Pode haver um problema de sincronização.');
+    }
+
+    // 6. O campo formulario_preenchido é calculado dinamicamente em getAllClientes
     // baseado na existência de um formulário na tabela formularios_pre_consulta
     // Portanto, não precisamos atualizar nenhum campo adicional aqui
-    console.log(`✅ Formulário salvo com sucesso para cliente ${clienteId}. Ele aparecerá automaticamente na lista "Aguardando Avaliação".`);
+    console.log(`✅ Formulário salvo com sucesso para cliente ${clienteId}.`);
+    console.log(`📋 O cliente aparecerá na lista "Aguardando Avaliação" quando a página for atualizada.`);
 
     return {
       success: true,

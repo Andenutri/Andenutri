@@ -35,16 +35,48 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
   useEffect(() => {
     // Carregar clientes inicialmente e quando modal de adicionar cliente fechar
     const loadClientes = async () => {
+      console.log('🔄 Carregando clientes para avaliação...');
       const todosClientes = await getAllClientes();
+      console.log(`📊 Total de clientes carregados: ${todosClientes.length}`);
+      
       // Filtrar clientes que precisam de avaliação (têm formulário preenchido mas não têm avaliação)
-      const paraAvaliar = todosClientes.filter(cliente => 
-        cliente.formulario_preenchido && !cliente.avaliacao_feita
-      );
+      const paraAvaliar = todosClientes.filter(cliente => {
+        const temFormulario = cliente.formulario_preenchido;
+        const temAvaliacao = cliente.avaliacao_feita;
+        const precisaAvaliar = temFormulario && !temAvaliacao;
+        
+        if (precisaAvaliar) {
+          console.log(`⏰ Cliente aguardando avaliação: ${cliente.nome} (ID: ${cliente.id})`);
+        }
+        
+        return precisaAvaliar;
+      });
+      
+      console.log(`✅ Clientes aguardando avaliação: ${paraAvaliar.length}`);
+      if (paraAvaliar.length > 0) {
+        console.log('📝 Nomes:', paraAvaliar.map(c => c.nome));
+      }
+      
       setClientes(todosClientes);
       setClientesParaAvaliar(paraAvaliar);
     };
     
     loadClientes();
+    
+    // Recarregar a cada 10 segundos para pegar novos formulários
+    const interval = setInterval(loadClientes, 10000);
+    
+    // Recarregar quando a janela ganha foco (usuário volta para a aba)
+    const handleFocus = () => {
+      console.log('👁️ Janela ganhou foco, recarregando clientes...');
+      loadClientes();
+    };
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, [showAddClientModal]); // Recarregar quando o modal de adicionar cliente fechar
   
   const abrirAvaliacaoEmocional = (cliente: ClienteComFormulario) => {
@@ -72,12 +104,30 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
                   {clientesParaAvaliar.length} clientes preencheram o formulário de pré-consulta e aguardam avaliação emocional
                 </p>
               </div>
-              <button
-                onClick={() => setShowAddClientModal(true)}
-                className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 py-3 rounded-lg hover:scale-105 transition-all shadow-lg font-semibold text-base flex items-center gap-2"
-              >
-                ➕ Adicionar Cliente
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={async () => {
+                    console.log('🔄 Atualização manual solicitada...');
+                    const todosClientes = await getAllClientes();
+                    const paraAvaliar = todosClientes.filter(cliente => 
+                      cliente.formulario_preenchido && !cliente.avaliacao_feita
+                    );
+                    setClientes(todosClientes);
+                    setClientesParaAvaliar(paraAvaliar);
+                    console.log(`✅ Atualizado: ${paraAvaliar.length} clientes aguardando avaliação`);
+                  }}
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-lg hover:scale-105 transition-all shadow-lg font-semibold text-base flex items-center gap-2"
+                  title="Atualizar lista de clientes"
+                >
+                  🔄 Atualizar
+                </button>
+                <button
+                  onClick={() => setShowAddClientModal(true)}
+                  className="bg-gradient-to-r from-amber-600 to-amber-700 text-white px-6 py-3 rounded-lg hover:scale-105 transition-all shadow-lg font-semibold text-base flex items-center gap-2"
+                >
+                  ➕ Adicionar Cliente
+                </button>
+              </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -170,9 +220,16 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
       {showModalEmocional && (
         <AvaliacaoEmocionalModal
           isOpen={showModalEmocional}
-          onClose={() => {
+          onClose={async () => {
             setShowModalEmocional(false);
             setClienteSelecionado(null);
+            // Recarregar clientes após fechar o modal de avaliação
+            const todosClientes = await getAllClientes();
+            const paraAvaliar = todosClientes.filter(cliente => 
+              cliente.formulario_preenchido && !cliente.avaliacao_feita
+            );
+            setClientes(todosClientes);
+            setClientesParaAvaliar(paraAvaliar);
           }}
           cliente={clienteSelecionado}
         />
@@ -181,9 +238,15 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
       {/* Modal de Adicionar Cliente */}
       <AddClientModal
         isOpen={showAddClientModal}
-        onClose={(_data) => {
+        onClose={async (_data) => {
           setShowAddClientModal(false);
-          // Os clientes serão recarregados automaticamente quando os dados mudarem
+          // Recarregar clientes após adicionar cliente
+          const todosClientes = await getAllClientes();
+          const paraAvaliar = todosClientes.filter(cliente => 
+            cliente.formulario_preenchido && !cliente.avaliacao_feita
+          );
+          setClientes(todosClientes);
+          setClientesParaAvaliar(paraAvaliar);
         }}
       />
     </div>
