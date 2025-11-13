@@ -5,12 +5,15 @@ import AvaliacaoEmocionalModal from './AvaliacaoEmocionalModal';
 import AddClientModal from './AddClientModal';
 import { ClienteComFormulario } from '@/data/mockClientes';
 import { getAllClientes } from '@/data/clientesData';
+import { getAllAvaliacoesEmocionais, deleteAvaliacaoEmocional, deleteAvaliacaoComportamental, getAvaliacoesComportamentaisCliente } from '@/data/avaliacoesEmocionaisData';
+import type { AvaliacaoEmocional } from '@/data/avaliacoesEmocionaisData';
 
 interface Avaliacao {
   id: string;
   cliente_id: string;
   cliente_nome: string;
   data_avaliacao: string;
+  data_criacao?: string;
   historia_pessoa?: string;
   bloco_emocional?: any;
   bloco_comportamental?: any;
@@ -23,13 +26,29 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [clientes, setClientes] = useState<ClienteComFormulario[]>([]);
   const [clientesParaAvaliar, setClientesParaAvaliar] = useState<ClienteComFormulario[]>([]);
+  const [avaliacaoParaEditar, setAvaliacaoParaEditar] = useState<AvaliacaoEmocional | null>(null);
+  const [clienteParaEditar, setClienteParaEditar] = useState<ClienteComFormulario | null>(null);
+  const [excluindo, setExcluindo] = useState<string | null>(null);
   
-  useEffect(() => {
-    // Carregar avaliações salvas do localStorage
-    if (typeof window !== 'undefined') {
-      const avaliacoesSalvas = JSON.parse(localStorage.getItem('avaliacoes_emocionais') || '[]');
-      setAvaliacoes(avaliacoesSalvas);
+  const carregarAvaliacoes = async () => {
+    try {
+      const avaliacoesDoSupabase = await getAllAvaliacoesEmocionais();
+      const avaliacoesFormatadas: Avaliacao[] = avaliacoesDoSupabase.map(av => ({
+        id: av.id || '',
+        cliente_id: av.cliente_id,
+        cliente_nome: av.cliente_nome || 'Cliente não encontrado',
+        data_avaliacao: av.data_criacao || new Date().toISOString(),
+        data_criacao: av.data_criacao,
+        historia_pessoa: av.historia_pessoa || undefined,
+      }));
+      setAvaliacoes(avaliacoesFormatadas);
+    } catch (error) {
+      console.error('Erro ao carregar avaliações:', error);
     }
+  };
+
+  useEffect(() => {
+    carregarAvaliacoes();
   }, [showModalEmocional]); // Recarregar quando o modal de avaliação fechar
   
   useEffect(() => {
@@ -83,7 +102,74 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
   
   const abrirAvaliacaoEmocional = (cliente: ClienteComFormulario) => {
     setClienteSelecionado(cliente);
+    setAvaliacaoParaEditar(null);
     setShowModalEmocional(true);
+  };
+
+  const editarAvaliacao = async (avaliacao: Avaliacao) => {
+    // Buscar cliente
+    const cliente = clientes.find(c => c.id === avaliacao.cliente_id);
+    if (!cliente) {
+      alert('❌ Cliente não encontrado');
+      return;
+    }
+
+    // Buscar avaliação completa do Supabase
+    const { getAvaliacoesEmocionaisCliente } = await import('@/data/avaliacoesEmocionaisData');
+    const avaliacoesEmocionais = await getAvaliacoesEmocionaisCliente(avaliacao.cliente_id);
+    const avaliacaoCompleta = avaliacoesEmocionais.find(av => av.id === avaliacao.id);
+    
+    if (!avaliacaoCompleta) {
+      alert('❌ Avaliação não encontrada');
+      return;
+    }
+
+    setAvaliacaoParaEditar(avaliacaoCompleta);
+    setClienteParaEditar(cliente);
+    setShowModalEmocional(true);
+  };
+
+  const excluirAvaliacao = async (avaliacao: Avaliacao) => {
+    if (!confirm(`Tem certeza que deseja excluir a avaliação de ${avaliacao.cliente_nome}?`)) {
+      return;
+    }
+
+    setExcluindo(avaliacao.id);
+    try {
+      // Deletar avaliação emocional
+      const resultadoEmocional = await deleteAvaliacaoEmocional(avaliacao.id);
+      
+      if (!resultadoEmocional.success) {
+        alert(`❌ Erro ao excluir avaliação emocional: ${resultadoEmocional.error}`);
+        return;
+      }
+
+      // Buscar e deletar avaliação comportamental associada (se existir)
+      const { getAvaliacoesComportamentaisCliente } = await import('@/data/avaliacoesEmocionaisData');
+      const avaliacoesComportamentais = await getAvaliacoesComportamentaisCliente(avaliacao.cliente_id);
+      const avaliacaoComportamental = avaliacoesComportamentais.find(av => av.cliente_id === avaliacao.cliente_id);
+      
+      if (avaliacaoComportamental?.id) {
+        await deleteAvaliacaoComportamental(avaliacaoComportamental.id);
+      }
+
+      alert('✅ Avaliação excluída com sucesso!');
+      await carregarAvaliacoes();
+      
+      // Recarregar clientes para atualizar status de avaliação
+      const todosClientes = await getAllClientes();
+      const paraAvaliar = todosClientes.filter(cliente => {
+        const isLead = (cliente as any).is_lead === true;
+        return isLead && cliente.formulario_preenchido && !cliente.avaliacao_feita;
+      });
+      setClientes(todosClientes);
+      setClientesParaAvaliar(paraAvaliar);
+    } catch (error) {
+      console.error('Erro ao excluir avaliação:', error);
+      alert('❌ Erro ao excluir avaliação. Verifique o console.');
+    } finally {
+      setExcluindo(null);
+    }
   };
 
   return (
@@ -185,8 +271,9 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
               <div className="space-y-4">
                 {avaliacoes.map((avaliacao, index) => {
                   const dataFormatada = new Date(avaliacao.data_avaliacao).toLocaleDateString('pt-BR');
+                  const estaExcluindo = excluindo === avaliacao.id;
                   return (
-                    <div key={index} className="bg-gradient-to-br from-green-50 to-amber-50 rounded-lg p-4 border-2 border-green-200 hover:border-green-400 transition-all cursor-pointer">
+                    <div key={avaliacao.id || index} className="bg-gradient-to-br from-green-50 to-amber-50 rounded-lg p-4 border-2 border-green-200 hover:border-green-400 transition-all">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
@@ -197,10 +284,25 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
                             <p className="text-sm text-gray-600">{dataFormatada}</p>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="flex items-center gap-2">
                           <span className="bg-green-100 text-green-700 text-xs px-3 py-1 rounded-full font-semibold">
                             ✅ Concluída
                           </span>
+                          <button
+                            onClick={() => editarAvaliacao(avaliacao)}
+                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-semibold flex items-center gap-1"
+                            title="Editar avaliação"
+                          >
+                            ✏️ Editar
+                          </button>
+                          <button
+                            onClick={() => excluirAvaliacao(avaliacao)}
+                            disabled={estaExcluindo}
+                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-semibold flex items-center gap-1 disabled:opacity-50"
+                            title="Excluir avaliação"
+                          >
+                            {estaExcluindo ? '⏳' : '🗑️'} {estaExcluindo ? 'Excluindo...' : 'Excluir'}
+                          </button>
                         </div>
                       </div>
                       
@@ -226,6 +328,8 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
           onClose={async () => {
             setShowModalEmocional(false);
             setClienteSelecionado(null);
+            setAvaliacaoParaEditar(null);
+            setClienteParaEditar(null);
             // Recarregar leads após fechar o modal de avaliação
             const todosClientes = await getAllClientes();
             const paraAvaliar = todosClientes.filter(cliente => {
@@ -234,8 +338,10 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
             });
             setClientes(todosClientes);
             setClientesParaAvaliar(paraAvaliar);
+            await carregarAvaliacoes();
           }}
-          cliente={clienteSelecionado}
+          cliente={clienteParaEditar || clienteSelecionado}
+          avaliacaoExistente={avaliacaoParaEditar}
         />
       )}
 

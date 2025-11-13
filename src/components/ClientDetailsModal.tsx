@@ -65,6 +65,232 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
     setLoadingReavaliacoes(false);
   }
 
+  // Função para gerar ficha completa em texto
+  async function gerarFichaCompleta(): Promise<string> {
+    if (!cliente) return '';
+
+    let ficha = `═══════════════════════════════════════════════════════════
+FICHA COMPLETA DO CLIENTE
+═══════════════════════════════════════════════════════════
+
+📋 INFORMAÇÕES BÁSICAS
+───────────────────────────────────────────────────────────
+Nome: ${cliente.nome}
+Email: ${cliente.email || 'Não informado'}
+Telefone: ${cliente.telefone || 'Não informado'}
+WhatsApp: ${cliente.whatsapp || 'Não informado'}
+Instagram: ${cliente.instagram || 'Não informado'}
+Endereço: ${cliente.endereco_completo || 'Não informado'}
+Status do Programa: ${cliente.status_plano || 'Não definido'}
+${(cliente as any).is_lead ? 'Tipo: LEAD (Ainda não comprou programa de 90 dias)' : 'Tipo: CLIENTE (Comprou programa de 90 dias)'}
+${(cliente as any).data_compra_programa ? `Data de Compra do Programa: ${new Date((cliente as any).data_compra_programa).toLocaleDateString('pt-BR')}` : ''}
+${cliente.codigo_reavaliacao ? `Código de Reavaliação: ${cliente.codigo_reavaliacao}` : ''}
+${cliente.perfil ? `Perfil: ${cliente.perfil}` : ''}
+
+`;
+
+    // Formulário de Pré-Consulta
+    if (cliente.formulario_preenchido && cliente.formulario) {
+      const form = cliente.formulario;
+      ficha += `📝 FORMULÁRIO DE PRÉ-CONSULTA
+───────────────────────────────────────────────────────────
+Data de Preenchimento: ${form.data_preenchimento ? new Date(form.data_preenchimento).toLocaleDateString('pt-BR') : 'Não informado'}
+
+DADOS FÍSICOS:
+• Idade: ${form.idade || 'Não informado'}
+• Altura: ${form.altura ? `${form.altura} cm` : 'Não informado'}
+• Peso Atual: ${form.peso_atual ? `${form.peso_atual} kg` : 'Não informado'}
+• Peso Desejado: ${form.peso_desejado ? `${form.peso_desejado} kg` : 'Não informado'}
+
+INFORMAÇÕES PROFISSIONAIS:
+• Como conheceu o programa: ${form.conheceu_programa || 'Não informado'}
+• Trabalho: ${form.trabalho || 'Não informado'}
+• Horário de trabalho: ${form.horario_trabalho || 'Não informado'}
+• Dias de trabalho: ${form.dias_trabalho || 'Não informado'}
+
+ROTINA DE SONO:
+• Horário que acorda: ${form.hora_acorda || 'Não informado'}
+• Horário que dorme: ${form.hora_dorme || 'Não informado'}
+• Qualidade do sono: ${form.qualidade_sono || 'Não informado'}
+
+VIDA PESSOAL:
+• É casada: ${form.casada || 'Não informado'}
+• Tem filhos: ${form.filhos || 'Não informado'}
+${form.nomes_idades_filhos ? `• Nomes e idades dos filhos: ${form.nomes_idades_filhos}` : ''}
+
+SAÚDE E SUPLEMENTAÇÃO:
+• Condições de saúde: ${form.condicao_saude || 'Nenhuma'}
+• Uso de medicação: ${form.uso_medicacao || 'Não'}
+${form.medicacao_qual ? `• Qual medicação: ${form.medicacao_qual}` : ''}
+• Restrições alimentares: ${form.restricao_alimentar || 'Nenhuma'}
+• Usa suplementos: ${form.usa_suplemento || 'Não'}
+${form.quais_suplementos ? `• Quais suplementos: ${form.quais_suplementos}` : ''}
+• Sente dor ou desconforto: ${form.sente_dor || 'Não'}
+${form.onde_dor ? `• Onde: ${form.onde_dor}` : ''}
+
+ROTINA ALIMENTAR:
+• Café da manhã: ${form.cafe_manha || 'Não informado'}
+• Lanche da manhã: ${form.lanche_manha || 'Não informado'}
+• Almoço: ${form.almoco || 'Não informado'}
+• Lanche da tarde: ${form.lanche_tarde || 'Não informado'}
+• Jantar: ${form.jantar || 'Não informado'}
+• Ceia: ${form.ceia || 'Não informado'}
+• Consumo de álcool/refrigerante: ${form.alcool_freq || 'Não informado'}
+• Consumo médio de água: ${form.consumo_agua || 'Não informado'}
+• Intestino funciona: ${form.intestino_vezes_semana || 'Não informado'}
+
+ATIVIDADE FÍSICA:
+• Atividade física: ${form.atividade_fisica || 'Não informado'}
+
+HÁBITOS E COMPORTAMENTOS:
+• Refeição mais difícil de manter saudável: ${form.refeicao_dificil || 'Não informado'}
+• O que costuma beliscar quando ansiosa/cansada: ${form.belisca_quando || 'Não informado'}
+• O que muda na rotina nos finais de semana: ${form.muda_fins_semana || 'Não informado'}
+• Escala de cuidado consigo (0-10): ${form.escala_cuidado || 'Não informado'}
+
+`;
+    }
+
+    // Buscar avaliações físicas
+    try {
+      const avaliacoesFisicas = await getAvaliacoesByCliente(cliente.id);
+      if (avaliacoesFisicas.length > 0) {
+        ficha += `⚖️ AVALIAÇÕES FÍSICAS
+───────────────────────────────────────────────────────────
+`;
+        avaliacoesFisicas.forEach((av, index) => {
+          ficha += `Avaliação ${index + 1} - ${av.tipo_avaliacao.toUpperCase()} (${new Date(av.data_avaliacao).toLocaleDateString('pt-BR')}):
+`;
+          if (av.peso) ficha += `• Peso: ${av.peso} kg\n`;
+          if (av.altura) ficha += `• Altura: ${av.altura} cm\n`;
+          if (av.percentual_gordura) ficha += `• % Gordura: ${av.percentual_gordura}%\n`;
+          if (av.percentual_musculo) ficha += `• % Músculo: ${av.percentual_musculo}%\n`;
+          if (av.gordura_visceral) ficha += `• Gordura Visceral: ${av.gordura_visceral}\n`;
+          if (av.metabolismo_basal) ficha += `• Metabolismo Basal: ${av.metabolismo_basal} kcal\n`;
+          if (av.busto) ficha += `• Busto: ${av.busto} cm\n`;
+          if (av.cintura) ficha += `• Cintura: ${av.cintura} cm\n`;
+          if (av.barriga) ficha += `• Barriga: ${av.barriga} cm\n`;
+          if (av.quadril) ficha += `• Quadril: ${av.quadril} cm\n`;
+          if (av.coxa) ficha += `• Coxa: ${av.coxa} cm\n`;
+          if (av.braco) ficha += `• Braço: ${av.braco} cm\n`;
+          if (av.pescoco) ficha += `• Pescoço: ${av.pescoco} cm\n`;
+          if (av.observacoes) ficha += `• Observações: ${av.observacoes}\n`;
+          ficha += `\n`;
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar avaliações físicas:', error);
+    }
+
+    // Buscar avaliações emocionais e comportamentais
+    try {
+      const avaliacoesEmocionais = await getAvaliacoesEmocionaisCliente(cliente.id);
+      const avaliacoesComportamentais = await getAvaliacoesComportamentaisCliente(cliente.id);
+
+      if (avaliacoesEmocionais.length > 0 || avaliacoesComportamentais.length > 0) {
+        ficha += `💚 AVALIAÇÕES EMOCIONAIS E COMPORTAMENTAIS
+───────────────────────────────────────────────────────────
+`;
+
+        if (avaliacoesEmocionais.length > 0) {
+          avaliacoesEmocionais.forEach((av, index) => {
+            ficha += `Avaliação Emocional ${index + 1} (${av.data_criacao ? new Date(av.data_criacao).toLocaleDateString('pt-BR') : 'Data não informada'}):
+`;
+            if (av.historia_pessoa) ficha += `• História da Pessoa: ${av.historia_pessoa}\n`;
+            if (av.momento_mudanca) ficha += `• Momento da Mudança: ${av.momento_mudanca}\n`;
+            if (av.incomoda_espelho) ficha += `• Incomoda no Espelho: ${av.incomoda_espelho}\n`;
+            if (av.situacao_corpo) ficha += `• Situação do Corpo: ${av.situacao_corpo}\n`;
+            if (av.atrapalha_dia_dia) ficha += `• Atrapalha no Dia a Dia: ${av.atrapalha_dia_dia}\n`;
+            if (av.maior_medo) ficha += `• Maior Medo: ${av.maior_medo}\n`;
+            if (av.por_que_eliminar_kilos) ficha += `• Por que Eliminar Kilos: ${av.por_que_eliminar_kilos}\n`;
+            if (av.tentou_antes) ficha += `• Tentou Antes: ${av.tentou_antes}\n`;
+            if (av.oque_fara_peso_desejado) ficha += `• O que Fará ao Peso Desejado: ${av.oque_fara_peso_desejado}\n`;
+            if (av.tres_motivos) ficha += `• Três Motivos: ${av.tres_motivos}\n`;
+            if (av.nivel_comprometimento) ficha += `• Nível de Comprometimento: ${av.nivel_comprometimento}/10\n`;
+            if (av.conselho_si) ficha += `• Conselho para Si: ${av.conselho_si}\n`;
+            ficha += `\n`;
+          });
+        }
+
+        if (avaliacoesComportamentais.length > 0) {
+          avaliacoesComportamentais.forEach((av, index) => {
+            ficha += `Avaliação Comportamental ${index + 1} (${av.data_criacao ? new Date(av.data_criacao).toLocaleDateString('pt-BR') : 'Data não informada'}):
+`;
+            if (av.ponto_fraco_alimentacao) ficha += `• Ponto Fraco na Alimentação: ${av.ponto_fraco_alimentacao}\n`;
+            if (av.organizada_ou_improvisa) ficha += `• Organizada ou Improvisa: ${av.organizada_ou_improvisa}\n`;
+            if (av.come_por_que) ficha += `• Come Por Que: ${av.come_por_que}\n`;
+            if (av.momentos_dificeis) ficha += `• Momentos Difíceis: ${av.momentos_dificeis}\n`;
+            if (av.prazer_alem_comida) ficha += `• Prazer Além da Comida: ${av.prazer_alem_comida}\n`;
+            if (av.premia_com_comida) ficha += `• Premia com Comida: ${av.premia_com_comida}\n`;
+            ficha += `\n`;
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar avaliações emocionais/comportamentais:', error);
+    }
+
+    // Reavaliações
+    if (reavaliacoes.length > 0) {
+      ficha += `📊 REAVALIAÇÕES PREENCHIDAS PELO CLIENTE
+───────────────────────────────────────────────────────────
+`;
+      reavaliacoes.forEach((reav, index) => {
+        ficha += `Reavaliação ${index + 1} (${reav.data_criacao ? new Date(reav.data_criacao).toLocaleDateString('pt-BR') : 'Data não informada'}):
+`;
+        if (reav.peso_atual) ficha += `• Peso Atual: ${reav.peso_atual} kg\n`;
+        if (reav.sintomas) ficha += `• Sintomas: ${reav.sintomas}\n`;
+        if (reav.observacoes) ficha += `• Observações: ${reav.observacoes}\n`;
+        ficha += `\n`;
+      });
+    }
+
+    ficha += `═══════════════════════════════════════════════════════════
+Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
+═══════════════════════════════════════════════════════════`;
+
+    return ficha;
+  }
+
+  // Função para copiar ficha para clipboard
+  async function copiarFicha() {
+    if (!cliente) return;
+    
+    setCopiando(true);
+    try {
+      const ficha = await gerarFichaCompleta();
+      await navigator.clipboard.writeText(ficha);
+      alert('✅ Ficha copiada para a área de transferência! Agora você pode colar no ChatGPT ou em qualquer lugar.');
+    } catch (error) {
+      console.error('Erro ao copiar:', error);
+      alert('❌ Erro ao copiar ficha. Tente novamente.');
+    } finally {
+      setCopiando(false);
+    }
+  }
+
+  // Função para exportar ficha como arquivo
+  async function exportarFicha() {
+    if (!cliente) return;
+    
+    try {
+      const ficha = await gerarFichaCompleta();
+      const blob = new Blob([ficha], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Ficha_${cliente.nome.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      alert('✅ Ficha exportada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar:', error);
+      alert('❌ Erro ao exportar ficha. Tente novamente.');
+    }
+  }
+
   if (!isOpen || !cliente) return null;
 
   return (

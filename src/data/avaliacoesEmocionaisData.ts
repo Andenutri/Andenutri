@@ -171,3 +171,172 @@ export async function getAvaliacoesComportamentaisCliente(
   }
 }
 
+// Atualizar avaliação emocional
+export async function updateAvaliacaoEmocional(
+  avaliacaoId: string,
+  avaliacao: Partial<AvaliacaoEmocional>
+): Promise<{ success: boolean; error?: string; data?: AvaliacaoEmocional }> {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'Usuário não autenticado' };
+    }
+
+    const { data, error } = await supabase
+      .from('avaliacoes_emocionais')
+      .update({
+        ...avaliacao,
+        user_id: userId,
+      })
+      .eq('id', avaliacaoId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao atualizar avaliação emocional:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data as AvaliacaoEmocional };
+  } catch (error: any) {
+    console.error('Erro ao atualizar avaliação emocional:', error);
+    return { success: false, error: error.message || 'Erro desconhecido' };
+  }
+}
+
+// Atualizar avaliação comportamental
+export async function updateAvaliacaoComportamental(
+  avaliacaoId: string,
+  avaliacao: Partial<AvaliacaoComportamental>
+): Promise<{ success: boolean; error?: string; data?: AvaliacaoComportamental }> {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'Usuário não autenticado' };
+    }
+
+    const { data, error } = await supabase
+      .from('avaliacoes_comportamentais')
+      .update({
+        ...avaliacao,
+        user_id: userId,
+      })
+      .eq('id', avaliacaoId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Erro ao atualizar avaliação comportamental:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: data as AvaliacaoComportamental };
+  } catch (error: any) {
+    console.error('Erro ao atualizar avaliação comportamental:', error);
+    return { success: false, error: error.message || 'Erro desconhecido' };
+  }
+}
+
+// Deletar avaliação emocional
+export async function deleteAvaliacaoEmocional(
+  avaliacaoId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'Usuário não autenticado' };
+    }
+
+    const { error } = await supabase
+      .from('avaliacoes_emocionais')
+      .delete()
+      .eq('id', avaliacaoId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Erro ao deletar avaliação emocional:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Erro ao deletar avaliação emocional:', error);
+    return { success: false, error: error.message || 'Erro desconhecido' };
+  }
+}
+
+// Deletar avaliação comportamental
+export async function deleteAvaliacaoComportamental(
+  avaliacaoId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return { success: false, error: 'Usuário não autenticado' };
+    }
+
+    const { error } = await supabase
+      .from('avaliacoes_comportamentais')
+      .delete()
+      .eq('id', avaliacaoId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Erro ao deletar avaliação comportamental:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error('Erro ao deletar avaliação comportamental:', error);
+    return { success: false, error: error.message || 'Erro desconhecido' };
+  }
+}
+
+// Buscar todas as avaliações emocionais (para histórico geral)
+export async function getAllAvaliacoesEmocionais(): Promise<Array<AvaliacaoEmocional & { cliente_nome?: string }>> {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from('avaliacoes_emocionais')
+      .select(`
+        *,
+        clientes:nome
+      `)
+      .eq('user_id', userId)
+      .order('data_criacao', { ascending: false });
+
+    if (error) {
+      console.error('Erro ao buscar todas as avaliações emocionais:', error);
+      return [];
+    }
+
+    // Buscar nomes dos clientes
+    const avaliacoesComNomes = await Promise.all(
+      (data || []).map(async (av: any) => {
+        const { data: clienteData } = await supabase
+          .from('clientes')
+          .select('nome')
+          .eq('id', av.cliente_id)
+          .single();
+        
+        return {
+          ...av,
+          cliente_nome: clienteData?.nome || 'Cliente não encontrado',
+        } as AvaliacaoEmocional & { cliente_nome: string };
+      })
+    );
+
+    return avaliacoesComNomes;
+  } catch (error) {
+    console.error('Erro ao buscar todas as avaliações emocionais:', error);
+    return [];
+  }
+}
+

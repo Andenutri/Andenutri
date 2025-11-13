@@ -10,9 +10,10 @@ interface AvaliacaoEmocionalModalProps {
   isOpen: boolean;
   onClose: () => void;
   cliente: ClienteComFormulario | null;
+  avaliacaoExistente?: any; // Avaliação existente para edição (opcional)
 }
 
-export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: AvaliacaoEmocionalModalProps) {
+export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente, avaliacaoExistente }: AvaliacaoEmocionalModalProps) {
   const { user } = useAuth();
   const [dadosFormulario, setDadosFormulario] = useState(cliente?.formulario || {} as any);
 
@@ -22,6 +23,26 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente }: Av
       setDadosFormulario(cliente.formulario);
     }
   }, [cliente]);
+
+  // Carregar avaliação existente se for edição
+  useEffect(() => {
+    if (avaliacaoExistente) {
+      setHistoriaPessoa(avaliacaoExistente.historia_pessoa || '');
+      setBlocoEmocional({
+        momento_mudanca: avaliacaoExistente.momento_mudanca || '',
+        incomoda_espelho: avaliacaoExistente.incomoda_espelho || '',
+        situacao_corpo: avaliacaoExistente.situacao_corpo || '',
+        atrapalha_dia_dia: avaliacaoExistente.atrapalha_dia_dia || '',
+        maior_medo: avaliacaoExistente.maior_medo || '',
+        por_que_eliminar_kilos: avaliacaoExistente.por_que_eliminar_kilos || '',
+        tentou_antes: avaliacaoExistente.tentou_antes || '',
+        oque_fara_peso_desejado: avaliacaoExistente.oque_fara_peso_desejado || '',
+        tres_motivos: avaliacaoExistente.tres_motivos || '',
+        nivel_comprometimento: String(avaliacaoExistente.nivel_comprometimento || '0'),
+        conselho_si: avaliacaoExistente.conselho_si || '',
+      });
+    }
+  }, [avaliacaoExistente]);
   
   const [blocoEmocional, setBlocoEmocional] = useState({
     momento_mudanca: '',
