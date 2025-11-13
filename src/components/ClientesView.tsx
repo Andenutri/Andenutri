@@ -19,20 +19,30 @@ export default function ClientesView({ sidebarOpen }: { sidebarOpen: boolean }) 
   const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
 
   // Carregar clientes UMA ÚNICA VEZ - compartilhado entre as duas visualizações
+  // Filtrar apenas CLIENTES (is_lead = false), não leads
   useEffect(() => {
     async function loadClientes() {
       setLoading(true);
-      const clientesData = await getAllClientes();
-      setAllClientes(clientesData);
+      const todosClientes = await getAllClientes();
+      // Filtrar apenas clientes (não leads)
+      const clientesFiltrados = todosClientes.filter(cliente => 
+        (cliente as any).is_lead === false || (cliente as any).is_lead === undefined
+      );
+      setAllClientes(clientesFiltrados);
       setLoading(false);
+      console.log(`👥 Clientes carregados: ${clientesFiltrados.length} (excluindo leads)`);
     }
     loadClientes();
   }, []);
 
   // Função para recarregar clientes (quando adicionar/editar)
   const reloadClientes = async () => {
-    const clientesData = await getAllClientes();
-    setAllClientes(clientesData);
+    const todosClientes = await getAllClientes();
+    // Filtrar apenas clientes (não leads)
+    const clientesFiltrados = todosClientes.filter(cliente => 
+      (cliente as any).is_lead === false || (cliente as any).is_lead === undefined
+    );
+    setAllClientes(clientesFiltrados);
   };
 
   return (

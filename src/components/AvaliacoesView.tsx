@@ -39,14 +39,16 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
       const todosClientes = await getAllClientes();
       console.log(`📊 Total de clientes carregados: ${todosClientes.length}`);
       
-      // Filtrar clientes que precisam de avaliação (têm formulário preenchido mas não têm avaliação)
+      // Filtrar LEADS que precisam de avaliação (têm formulário preenchido mas não têm avaliação)
+      // Apenas leads (is_lead = true), não clientes
       const paraAvaliar = todosClientes.filter(cliente => {
+        const isLead = (cliente as any).is_lead === true;
         const temFormulario = cliente.formulario_preenchido;
         const temAvaliacao = cliente.avaliacao_feita;
-        const precisaAvaliar = temFormulario && !temAvaliacao;
+        const precisaAvaliar = isLead && temFormulario && !temAvaliacao;
         
         if (precisaAvaliar) {
-          console.log(`⏰ Cliente aguardando avaliação: ${cliente.nome} (ID: ${cliente.id})`);
+          console.log(`⏰ Lead aguardando avaliação: ${cliente.nome} (ID: ${cliente.id})`);
         }
         
         return precisaAvaliar;
@@ -99,9 +101,9 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
           <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-purple-700 mb-2">⏰ Clientes Aguardando Avaliação</h2>
+                <h2 className="text-2xl font-bold text-purple-700 mb-2">⏰ Leads Aguardando Avaliação</h2>
                 <p className="text-gray-600">
-                  {clientesParaAvaliar.length} clientes preencheram o formulário de pré-consulta e aguardam avaliação emocional
+                  {clientesParaAvaliar.length} {clientesParaAvaliar.length === 1 ? 'lead preencheu' : 'leads preencheram'} o formulário de pré-consulta e {clientesParaAvaliar.length === 1 ? 'aguarda' : 'aguardam'} avaliação emocional
                 </p>
               </div>
               <div className="flex gap-3">
@@ -109,12 +111,13 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
                   onClick={async () => {
                     console.log('🔄 Atualização manual solicitada...');
                     const todosClientes = await getAllClientes();
-                    const paraAvaliar = todosClientes.filter(cliente => 
-                      cliente.formulario_preenchido && !cliente.avaliacao_feita
-                    );
+                    const paraAvaliar = todosClientes.filter(cliente => {
+                      const isLead = (cliente as any).is_lead === true;
+                      return isLead && cliente.formulario_preenchido && !cliente.avaliacao_feita;
+                    });
                     setClientes(todosClientes);
                     setClientesParaAvaliar(paraAvaliar);
-                    console.log(`✅ Atualizado: ${paraAvaliar.length} clientes aguardando avaliação`);
+                    console.log(`✅ Atualizado: ${paraAvaliar.length} leads aguardando avaliação`);
                   }}
                   className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-lg hover:scale-105 transition-all shadow-lg font-semibold text-base flex items-center gap-2"
                   title="Atualizar lista de clientes"
@@ -163,7 +166,7 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
               {clientesParaAvaliar.length === 0 && (
                 <div className="col-span-full text-center py-12 text-gray-400">
                   <div className="text-5xl mb-4">✅</div>
-                  <p className="text-lg">Todos os clientes foram avaliados!</p>
+                  <p className="text-lg">Todos os leads foram avaliados!</p>
                 </div>
               )}
             </div>
@@ -223,11 +226,12 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
           onClose={async () => {
             setShowModalEmocional(false);
             setClienteSelecionado(null);
-            // Recarregar clientes após fechar o modal de avaliação
+            // Recarregar leads após fechar o modal de avaliação
             const todosClientes = await getAllClientes();
-            const paraAvaliar = todosClientes.filter(cliente => 
-              cliente.formulario_preenchido && !cliente.avaliacao_feita
-            );
+            const paraAvaliar = todosClientes.filter(cliente => {
+              const isLead = (cliente as any).is_lead === true;
+              return isLead && cliente.formulario_preenchido && !cliente.avaliacao_feita;
+            });
             setClientes(todosClientes);
             setClientesParaAvaliar(paraAvaliar);
           }}
@@ -240,11 +244,12 @@ export default function AvaliacoesView({ sidebarOpen }: { sidebarOpen: boolean }
         isOpen={showAddClientModal}
         onClose={async (_data) => {
           setShowAddClientModal(false);
-          // Recarregar clientes após adicionar cliente
+          // Recarregar leads após adicionar lead
           const todosClientes = await getAllClientes();
-          const paraAvaliar = todosClientes.filter(cliente => 
-            cliente.formulario_preenchido && !cliente.avaliacao_feita
-          );
+          const paraAvaliar = todosClientes.filter(cliente => {
+            const isLead = (cliente as any).is_lead === true;
+            return isLead && cliente.formulario_preenchido && !cliente.avaliacao_feita;
+          });
           setClientes(todosClientes);
           setClientesParaAvaliar(paraAvaliar);
         }}
