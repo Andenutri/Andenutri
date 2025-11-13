@@ -391,7 +391,7 @@ export async function removeClientFromColumn(columnId: string, clienteId: string
     const clienteIdStr = String(clienteId);
     
     // Normalizar IDs para comparação (todos como string)
-    const clientesIdsStr = clientesIds.map(id => String(id));
+    const clientesIdsStr = clientesIds.map((id: any) => String(id));
     
     // Remover o cliente se estiver na lista
     const novosClientesIds = clientesIdsStr.filter(id => id !== clienteIdStr);
