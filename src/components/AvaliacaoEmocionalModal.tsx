@@ -26,7 +26,7 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente, aval
 
   // Carregar avaliação existente se for edição
   useEffect(() => {
-    if (avaliacaoExistente) {
+    if (avaliacaoExistente && cliente) {
       setHistoriaPessoa(avaliacaoExistente.historia_pessoa || '');
       setBlocoEmocional({
         momento_mudanca: avaliacaoExistente.momento_mudanca || '',
@@ -41,8 +41,49 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente, aval
         nivel_comprometimento: String(avaliacaoExistente.nivel_comprometimento || '0'),
         conselho_si: avaliacaoExistente.conselho_si || '',
       });
+
+      // Carregar avaliação comportamental
+      getAvaliacoesComportamentaisCliente(cliente.id).then(avaliacoesComportamentais => {
+        const avaliacaoComportamental = avaliacoesComportamentais.find(av => av.cliente_id === cliente.id);
+        if (avaliacaoComportamental) {
+          setBlocoComportamental({
+            ponto_fraco_alimentacao: avaliacaoComportamental.ponto_fraco_alimentacao || '',
+            organizada_ou_improvisa: avaliacaoComportamental.organizada_ou_improvisa || '',
+            come_por_que: avaliacaoComportamental.come_por_que || '',
+            momentos_dificeis: avaliacaoComportamental.momentos_dificeis || '',
+            prazer_alem_comida: avaliacaoComportamental.prazer_alem_comida || '',
+            premia_com_comida: avaliacaoComportamental.premia_com_comida || '',
+          });
+        }
+      }).catch(error => {
+        console.error('Erro ao carregar avaliação comportamental:', error);
+      });
+    } else {
+      // Limpar campos se não for edição
+      setHistoriaPessoa('');
+      setBlocoEmocional({
+        momento_mudanca: '',
+        incomoda_espelho: '',
+        situacao_corpo: '',
+        atrapalha_dia_dia: '',
+        maior_medo: '',
+        por_que_eliminar_kilos: '',
+        tentou_antes: '',
+        oque_fara_peso_desejado: '',
+        tres_motivos: '',
+        nivel_comprometimento: '0',
+        conselho_si: '',
+      });
+      setBlocoComportamental({
+        ponto_fraco_alimentacao: '',
+        organizada_ou_improvisa: '',
+        come_por_que: '',
+        momentos_dificeis: '',
+        prazer_alem_comida: '',
+        premia_com_comida: '',
+      });
     }
-  }, [avaliacaoExistente]);
+  }, [avaliacaoExistente, cliente]);
   
   const [blocoEmocional, setBlocoEmocional] = useState({
     momento_mudanca: '',
