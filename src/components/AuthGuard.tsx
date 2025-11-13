@@ -11,24 +11,37 @@ interface AuthGuardProps {
 // Rotas públicas que não requerem autenticação
 const publicRoutes = ['/login', '/register'];
 
+// Verificar se uma rota é pública
+function isPublicRoute(pathname: string | null): boolean {
+  if (!pathname) return false;
+  
+  // Rotas exatas
+  if (publicRoutes.includes(pathname)) return true;
+  
+  // Rotas de formulário público (qualquer coisa em /formulario/*)
+  if (pathname.startsWith('/formulario/')) return true;
+  
+  return false;
+}
+
 export default function AuthGuard({ children }: AuthGuardProps) {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   // Verificar se a rota atual é pública
-  const isPublicRoute = publicRoutes.includes(pathname || '');
+  const isPublic = isPublicRoute(pathname);
 
   useEffect(() => {
     // Se não for rota pública e não estiver autenticado, redirecionar para login
-    if (!loading && !isAuthenticated && !isPublicRoute) {
+    if (!loading && !isAuthenticated && !isPublic) {
       router.push('/login');
     }
     // Se estiver autenticado e tentar acessar login/register, redirecionar para home
-    if (!loading && isAuthenticated && isPublicRoute) {
+    if (!loading && isAuthenticated && pathname && publicRoutes.includes(pathname)) {
       router.push('/');
     }
-  }, [isAuthenticated, loading, isPublicRoute, router]);
+  }, [isAuthenticated, loading, isPublic, pathname, router]);
 
   // Mostrar loading enquanto verifica autenticação
   if (loading) {
@@ -43,7 +56,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Se for rota pública, renderizar sem verificar autenticação
-  if (isPublicRoute) {
+  if (isPublic) {
     return <>{children}</>;
   }
 

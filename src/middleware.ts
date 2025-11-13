@@ -11,6 +11,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Permitir acesso a formulários públicos (rotas /formulario/*)
+  if (pathname.startsWith('/formulario/')) {
+    return NextResponse.next();
+  }
+
   // Verificar se é uma rota de página (não API)
   if (pathname.startsWith('/api/')) {
     return NextResponse.next();

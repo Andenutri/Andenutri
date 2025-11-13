@@ -127,6 +127,16 @@ export default function FormularioPublicoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('🚀 handleSubmit chamado!');
+    console.log('📋 Estado atual:', { submitting, loading, nutricionistaEmail });
+    
+    if (submitting || loading) {
+      console.log('⚠️ Já está enviando ou carregando, ignorando...');
+      return;
+    }
+    
     setSubmitting(true);
     setError('');
     setSuccess(false);
@@ -746,7 +756,18 @@ export default function FormularioPublicoPage() {
           <div className="flex gap-4 pt-4 border-t">
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || loading}
+              onClick={(e) => {
+                // Fallback: se o form não disparar o submit, tentar manualmente
+                if (!e.defaultPrevented) {
+                  console.log('🖱️ Botão clicado - disparando submit manual');
+                  const form = e.currentTarget.closest('form');
+                  if (form) {
+                    const formEvent = new Event('submit', { bubbles: true, cancelable: true });
+                    form.dispatchEvent(formEvent);
+                  }
+                }
+              }}
               className="flex-1 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:scale-105 transition-all shadow-lg font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? '📤 Enviando...' : '✅ Enviar Formulário'}

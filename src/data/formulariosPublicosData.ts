@@ -156,7 +156,7 @@ export async function salvarFormularioPublico(
       
       const { data: clienteExistente, error: buscaError } = await supabase
         .from('clientes')
-        .select('id, nome, email, whatsapp, instagram, endereco_completo')
+        .select('id, nome, email, telefone, whatsapp, instagram, endereco_completo')
         .or(orQuery)
         .eq('user_id', userId)
         .maybeSingle();
@@ -191,7 +191,14 @@ export async function salvarFormularioPublico(
         // Atualizar dados que vieram do formulário (sobrescrever se necessário)
         if (dados.nome_completo) dadosAtualizacao.nome = dados.nome_completo;
         if (dados.email) dadosAtualizacao.email = dados.email;
-        if (dados.whatsapp) dadosAtualizacao.whatsapp = dados.whatsapp;
+        // Atualizar telefone se não existir ou se tiver whatsapp novo
+        if (dados.whatsapp) {
+          dadosAtualizacao.whatsapp = dados.whatsapp;
+          // Se o cliente não tem telefone, usar o whatsapp como telefone
+          if (!clienteExistente.telefone) {
+            dadosAtualizacao.telefone = dados.whatsapp;
+          }
+        }
         if (dados.instagram) dadosAtualizacao.instagram = dados.instagram;
         if (dados.endereco_completo) dadosAtualizacao.endereco_completo = dados.endereco_completo;
         
@@ -211,11 +218,15 @@ export async function salvarFormularioPublico(
         console.log('✅ Cliente atualizado:', clienteId);
       } else {
         // Criar novo cliente
+        // O campo telefone é obrigatório, então usamos whatsapp se disponível, ou um valor padrão
+        const telefone = dados.whatsapp || dados.email || '00000000000';
+        
         const { data: novoCliente, error: clienteError } = await supabase
           .from('clientes')
           .insert({
             nome: dados.nome_completo,
             email: dados.email || '',
+            telefone: telefone, // Campo obrigatório
             whatsapp: dados.whatsapp || '',
             instagram: dados.instagram || '',
             endereco_completo: dados.endereco_completo || '',
@@ -239,11 +250,15 @@ export async function salvarFormularioPublico(
       }
     } else {
       // Se não tem email nem whatsapp, criar novo cliente
+      // O campo telefone é obrigatório, então usamos um valor padrão
+      const telefone = dados.whatsapp || dados.email || '00000000000';
+      
       const { data: novoCliente, error: clienteError } = await supabase
         .from('clientes')
         .insert({
           nome: dados.nome_completo,
           email: '',
+          telefone: telefone, // Campo obrigatório
           whatsapp: '',
           instagram: dados.instagram || '',
           endereco_completo: dados.endereco_completo || '',
