@@ -131,77 +131,90 @@ export default function FormularioPublicoPage() {
     setError('');
     setSuccess(false);
 
-    if (!formData.nome_completo || (!formData.email && !formData.whatsapp)) {
-      setError('Por favor, preencha pelo menos nome completo e email ou WhatsApp');
-      setSubmitting(false);
-      return;
-    }
+    try {
+      if (!formData.nome_completo || (!formData.email && !formData.whatsapp)) {
+        setError('Por favor, preencha pelo menos nome completo e email ou WhatsApp');
+        setSubmitting(false);
+        return;
+      }
 
-    if (!nutricionistaEmail) {
-      setError('Erro: Email do nutricionista não encontrado. Verifique a URL.');
-      setSubmitting(false);
-      return;
-    }
+      if (!nutricionistaEmail) {
+        setError('Erro: Email do nutricionista não encontrado. Verifique a URL.');
+        setSubmitting(false);
+        return;
+      }
 
-    console.log('📤 Enviando formulário...');
-    const resultado = await salvarFormularioPublico(nutricionistaEmail, formData);
-    console.log('📥 Resultado do salvamento:', resultado);
+      console.log('📤 Enviando formulário...');
+      console.log('📋 Dados do formulário:', formData);
+      console.log('📧 Email do nutricionista:', nutricionistaEmail);
+      
+      const resultado = await salvarFormularioPublico(nutricionistaEmail, formData);
+      console.log('📥 Resultado do salvamento:', resultado);
+      console.log('✅ Success flag:', resultado.success);
 
-    if (resultado.success) {
-      console.log('✅ Sucesso! Exibindo mensagem de parabéns...');
-      setSuccess(true);
-      setError('');
-      // Limpar formulário
-      setFormData({
-        nome_completo: '',
-        endereco_completo: '',
-        whatsapp: '',
-        instagram: '',
-        email: '',
-        idade: '',
-        altura: '',
-        peso_atual: '',
-        peso_desejado: '',
-        conheceu_programa: '',
-        trabalho: '',
-        horario_trabalho: '',
-        dias_trabalho: '',
-        hora_acorda: '',
-        hora_dorme: '',
-        qualidade_sono: '',
-        casada: '',
-        filhos: '',
-        nomes_idades_filhos: '',
-        condicao_saude: '',
-        uso_medicacao: '',
-        medicacao_qual: '',
-        restricao_alimentar: '',
-        usa_suplemento: '',
-        quais_suplementos: '',
-        sente_dor: '',
-        onde_dor: '',
-        cafe_manha: '',
-        lanche_manha: '',
-        almoco: '',
-        lanche_tarde: '',
-        jantar: '',
-        ceia: '',
-        alcool_freq: '',
-        consumo_agua: '',
-        intestino_vezes_semana: '',
-        atividade_fisica: '',
-        refeicao_dificil: '',
-        belisca_quando: '',
-        muda_fins_semana: '',
-        escala_cuidado: '',
-      });
-    } else {
-      console.error('❌ Erro ao salvar formulário:', resultado.error);
-      setError(resultado.error || 'Erro ao enviar formulário. Tente novamente.');
+      if (resultado.success) {
+        console.log('✅ Sucesso! Exibindo mensagem de parabéns...');
+        // Limpar formulário primeiro
+        setFormData({
+          nome_completo: '',
+          endereco_completo: '',
+          whatsapp: '',
+          instagram: '',
+          email: '',
+          idade: '',
+          altura: '',
+          peso_atual: '',
+          peso_desejado: '',
+          conheceu_programa: '',
+          trabalho: '',
+          horario_trabalho: '',
+          dias_trabalho: '',
+          hora_acorda: '',
+          hora_dorme: '',
+          qualidade_sono: '',
+          casada: '',
+          filhos: '',
+          nomes_idades_filhos: '',
+          condicao_saude: '',
+          uso_medicacao: '',
+          medicacao_qual: '',
+          restricao_alimentar: '',
+          usa_suplemento: '',
+          quais_suplementos: '',
+          sente_dor: '',
+          onde_dor: '',
+          cafe_manha: '',
+          lanche_manha: '',
+          almoco: '',
+          lanche_tarde: '',
+          jantar: '',
+          ceia: '',
+          alcool_freq: '',
+          consumo_agua: '',
+          intestino_vezes_semana: '',
+          atividade_fisica: '',
+          refeicao_dificil: '',
+          belisca_quando: '',
+          muda_fins_semana: '',
+          escala_cuidado: '',
+        });
+        // Definir sucesso DEPOIS de limpar o formulário
+        setError('');
+        setSuccess(true);
+        setSubmitting(false);
+        console.log('✅ Estado success definido como true');
+      } else {
+        console.error('❌ Erro ao salvar formulário:', resultado.error);
+        setError(resultado.error || 'Erro ao enviar formulário. Tente novamente.');
+        setSuccess(false);
+        setSubmitting(false);
+      }
+    } catch (err: any) {
+      console.error('❌ Erro inesperado ao enviar formulário:', err);
+      setError(err.message || 'Erro inesperado ao enviar formulário. Tente novamente.');
       setSuccess(false);
+      setSubmitting(false);
     }
-
-    setSubmitting(false);
   };
 
   if (loading) {
@@ -215,18 +228,7 @@ export default function FormularioPublicoPage() {
     );
   }
 
-  if (error && !nutricionistaEmail) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
-          <div className="text-6xl mb-4">❌</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Link Inválido</h1>
-          <p className="text-gray-600 mb-6">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Verificar sucesso PRIMEIRO (antes de qualquer erro)
   if (success) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
@@ -248,6 +250,19 @@ export default function FormularioPublicoPage() {
           <div className="text-sm text-gray-500 mt-6">
             <p>📱 Aguarde nosso contato pelo WhatsApp ou email informado.</p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Verificar erro de link inválido DEPOIS do sucesso
+  if (error && !nutricionistaEmail) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl shadow-lg p-8 max-w-md text-center">
+          <div className="text-6xl mb-4">❌</div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Link Inválido</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
         </div>
       </div>
     );
