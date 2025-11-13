@@ -328,7 +328,7 @@ export async function addClientToColumn(columnId: string, clienteId: string) {
 
     // Converter IDs para string para comparação consistente
     const clienteIdStr = String(clienteId);
-    const clientesIdsStr = clientesIds.map(id => String(id));
+    const clientesIdsStr = clientesIds.map((id: any) => String(id));
     
     // Verificar se já está na lista (comparação como string)
     if (clientesIdsStr.includes(clienteIdStr)) {
