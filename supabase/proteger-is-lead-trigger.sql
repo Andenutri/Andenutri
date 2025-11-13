@@ -42,6 +42,10 @@ CREATE TRIGGER trigger_validar_is_lead_insert
     FOR EACH ROW
     EXECUTE FUNCTION validar_is_lead();
 
-RAISE NOTICE '✅ Triggers criados para proteger is_lead';
-RAISE NOTICE '✅ Agora é impossível marcar como lead um cliente que comprou o programa';
+-- Mensagem de sucesso
+DO $$ 
+BEGIN
+    RAISE NOTICE '✅ Triggers criados para proteger is_lead';
+    RAISE NOTICE '✅ Agora é impossível marcar como lead um cliente que comprou o programa';
+END $$;
 
