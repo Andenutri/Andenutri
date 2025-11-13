@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
-import { salvarAvaliacaoEmocional, salvarAvaliacaoComportamental } from '@/data/avaliacoesEmocionaisData';
+import { salvarAvaliacaoEmocional, salvarAvaliacaoComportamental, updateAvaliacaoEmocional, updateAvaliacaoComportamental, getAvaliacoesComportamentaisCliente } from '@/data/avaliacoesEmocionaisData';
 import { salvarFormularioPublico } from '@/data/formulariosPublicosData';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -77,9 +77,8 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente, aval
     setSalvando(true);
     
     try {
-      // 1. Salvar avaliação emocional no Supabase
-      const resultadoEmocional = await salvarAvaliacaoEmocional({
-        cliente_id: cliente.id,
+      // 1. Salvar ou atualizar avaliação emocional no Supabase
+      const dadosEmocional = {
         historia_pessoa: historiaPessoa || undefined,
         momento_mudanca: blocoEmocional.momento_mudanca || undefined,
         incomoda_espelho: blocoEmocional.incomoda_espelho || undefined,
@@ -92,26 +91,61 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente, aval
         tres_motivos: blocoEmocional.tres_motivos || undefined,
         nivel_comprometimento: parseInt(blocoEmocional.nivel_comprometimento || '0'),
         conselho_si: blocoEmocional.conselho_si || undefined,
-      });
+      };
+
+      let resultadoEmocional;
+      if (avaliacaoExistente?.id) {
+        // Atualizar avaliação existente
+        resultadoEmocional = await updateAvaliacaoEmocional(avaliacaoExistente.id, dadosEmocional);
+      } else {
+        // Criar nova avaliação
+        resultadoEmocional = await salvarAvaliacaoEmocional({
+          cliente_id: cliente.id,
+          ...dadosEmocional,
+        });
+      }
 
       if (!resultadoEmocional.success) {
-        alert(`❌ Erro ao salvar avaliação emocional: ${resultadoEmocional.error}`);
+        alert(`❌ Erro ao ${avaliacaoExistente?.id ? 'atualizar' : 'salvar'} avaliação emocional: ${resultadoEmocional.error}`);
         return;
       }
 
-      // 2. Salvar avaliação comportamental no Supabase
-      const resultadoComportamental = await salvarAvaliacaoComportamental({
-        cliente_id: cliente.id,
+      // 2. Salvar ou atualizar avaliação comportamental no Supabase
+      const dadosComportamental = {
         ponto_fraco_alimentacao: blocoComportamental.ponto_fraco_alimentacao || undefined,
         organizada_ou_improvisa: blocoComportamental.organizada_ou_improvisa || undefined,
         come_por_que: blocoComportamental.come_por_que || undefined,
         momentos_dificeis: blocoComportamental.momentos_dificeis || undefined,
         prazer_alem_comida: blocoComportamental.prazer_alem_comida || undefined,
         premia_com_comida: blocoComportamental.premia_com_comida || undefined,
-      });
+      };
+
+      let resultadoComportamental;
+      if (avaliacaoExistente?.id) {
+        // Buscar avaliação comportamental existente
+        const avaliacoesComportamentais = await getAvaliacoesComportamentaisCliente(cliente.id);
+        const avaliacaoComportamentalExistente = avaliacoesComportamentais.find(av => av.cliente_id === cliente.id);
+        
+        if (avaliacaoComportamentalExistente?.id) {
+          // Atualizar avaliação comportamental existente
+          resultadoComportamental = await updateAvaliacaoComportamental(avaliacaoComportamentalExistente.id, dadosComportamental);
+        } else {
+          // Criar nova avaliação comportamental
+          resultadoComportamental = await salvarAvaliacaoComportamental({
+            cliente_id: cliente.id,
+            ...dadosComportamental,
+          });
+        }
+      } else {
+        // Criar nova avaliação comportamental
+        resultadoComportamental = await salvarAvaliacaoComportamental({
+          cliente_id: cliente.id,
+          ...dadosComportamental,
+        });
+      }
 
       if (!resultadoComportamental.success) {
-        alert(`❌ Erro ao salvar avaliação comportamental: ${resultadoComportamental.error}`);
+        alert(`❌ Erro ao ${avaliacaoExistente?.id ? 'atualizar' : 'salvar'} avaliação comportamental: ${resultadoComportamental.error}`);
         return;
       }
 
@@ -168,7 +202,7 @@ export default function AvaliacaoEmocionalModal({ isOpen, onClose, cliente, aval
         }
       }
 
-      alert('✅ Avaliação emocional e comportamental salvas com sucesso!');
+      alert(`✅ Avaliação emocional e comportamental ${avaliacaoExistente?.id ? 'atualizadas' : 'salvas'} com sucesso!`);
       onClose();
       
     } catch (error) {
