@@ -191,6 +191,8 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
   }
 
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [draggedColumn, setDraggedColumn] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [showAddColumnModal, setShowAddColumnModal] = useState(false);
   const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [showEditClientModal, setShowEditClientModal] = useState(false);
@@ -213,6 +215,7 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
     { id: 'gray', nome: 'Cinza', classe: 'bg-gray-100 border-gray-300 text-gray-800' },
   ];
 
+  // Drag and Drop de CLIENTES (cards)
   const handleDragStart = (clienteId: string) => {
     setDraggedItem(clienteId);
   };
@@ -221,8 +224,9 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
     e.preventDefault();
   };
 
-  const handleDrop = (columnId: string) => {
+  const handleDrop = async (columnId: string) => {
     if (!draggedItem) return;
+    
     const newColumns = columns.map(col => {
       const clientesSemDragged = col.clientes.filter(id => id !== draggedItem);
       if (col.id === columnId) {
@@ -230,8 +234,92 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
       }
       return { ...col, clientes: clientesSemDragged };
     });
+    
     setColumns(newColumns);
+    
+    // Salvar no Supabase
+    try {
+      const { addClientToColumn, removeClientFromColumn } = await import('@/data/kanbanData');
+      // Remover de todas as colunas primeiro
+      for (const col of columns) {
+        if (col.clientes.includes(draggedItem) && col.id !== columnId) {
+          await removeClientFromColumn(col.id, draggedItem);
+        }
+      }
+      // Adicionar à nova coluna
+      await addClientToColumn(columnId, draggedItem);
+    } catch (error) {
+      console.error('Erro ao salvar mudança de coluna:', error);
+    }
+    
     setDraggedItem(null);
+  };
+
+  // Drag and Drop de COLUNAS (reordenar)
+  const handleColumnDragStart = (columnId: string, e: React.DragEvent) => {
+    setDraggedColumn(columnId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', columnId);
+  };
+
+  const handleColumnDragOver = (columnId: string, e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedColumn && draggedColumn !== columnId) {
+      setDragOverColumn(columnId);
+    }
+  };
+
+  const handleColumnDragLeave = () => {
+    setDragOverColumn(null);
+  };
+
+  const handleColumnDrop = async (targetColumnId: string, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverColumn(null);
+    
+    if (!draggedColumn || draggedColumn === targetColumnId) {
+      setDraggedColumn(null);
+      return;
+    }
+
+    // Reordenar colunas
+    const draggedIndex = columns.findIndex(col => col.id === draggedColumn);
+    const targetIndex = columns.findIndex(col => col.id === targetColumnId);
+    
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDraggedColumn(null);
+      return;
+    }
+
+    const newColumns = [...columns];
+    const [removed] = newColumns.splice(draggedIndex, 1);
+    newColumns.splice(targetIndex, 0, removed);
+
+    // Atualizar ordem no array
+    const updatedColumns = newColumns.map((col, index) => ({
+      ...col,
+      ordem: index
+    }));
+
+    setColumns(updatedColumns);
+
+    // Salvar nova ordem no Supabase
+    try {
+      const { updateKanbanColumn } = await import('@/data/kanbanData');
+      await Promise.all(
+        updatedColumns.map((col, index) =>
+          updateKanbanColumn(col.id, { ordem: index })
+        )
+      );
+      console.log('✅ Ordem das colunas salva no Supabase');
+    } catch (error) {
+      console.error('Erro ao salvar ordem das colunas:', error);
+      // Reverter em caso de erro
+      setColumns(columns);
+    }
+
+    setDraggedColumn(null);
   };
 
   const adicionarColuna = async () => {
@@ -445,17 +533,47 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
                 });
               }
 
+              const isDraggingColumn = draggedColumn === column.id;
+              const isDragOver = dragOverColumn === column.id;
+
               return (
                 <div
                   key={column.id}
-                  className="w-72 flex-shrink-0"
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(column.id)}
+                  className={`w-72 flex-shrink-0 transition-all ${
+                    isDraggingColumn ? 'opacity-50 scale-95' : ''
+                  } ${
+                    isDragOver ? 'transform translate-x-2' : ''
+                  }`}
+                  onDragOver={(e) => {
+                    handleDragOver(e);
+                    handleColumnDragOver(column.id, e);
+                  }}
+                  onDragLeave={handleColumnDragLeave}
+                  onDrop={(e) => {
+                    // Verificar se é drop de coluna ou cliente
+                    if (draggedColumn) {
+                      handleColumnDrop(column.id, e);
+                    } else {
+                      handleDrop(column.id);
+                    }
+                  }}
                 >
-                  <div className={`${classeCor.classe} rounded-t-xl px-3 py-2 md:px-4 md:py-3 border-2 font-bold flex items-center justify-between mb-3`}>
-                    <span className="text-sm md:text-base">{column.nome} ({clientesNaColuna.length})</span>
+                  <div 
+                    draggable
+                    onDragStart={(e) => handleColumnDragStart(column.id, e)}
+                    className={`${classeCor.classe} rounded-t-xl px-3 py-2 md:px-4 md:py-3 border-2 font-bold flex items-center justify-between mb-3 cursor-move hover:shadow-lg transition-all ${
+                      isDraggingColumn ? 'ring-2 ring-amber-500' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-lg">↕️</span>
+                      <span className="text-sm md:text-base">{column.nome} ({clientesNaColuna.length})</span>
+                    </div>
                     <button
-                      onClick={() => removerColuna(column.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removerColuna(column.id);
+                      }}
                       className="text-xs hover:bg-white/30 px-2 py-1 rounded"
                     >
                       🗑️

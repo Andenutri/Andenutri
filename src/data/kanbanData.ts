@@ -356,6 +356,63 @@ export async function addClientToColumn(columnId: string, clienteId: string) {
   }
 }
 
+// Remover cliente de uma coluna específica
+export async function removeClientFromColumn(columnId: string, clienteId: string) {
+  if (!isSupabaseConnected()) {
+    console.warn('⚠️ Supabase não configurado.');
+    return;
+  }
+
+  try {
+    const { supabase } = await import('../lib/supabase');
+    
+    console.log(`🔍 Tentando remover cliente ${clienteId} da coluna ${columnId}`);
+    
+    // Buscar coluna atual
+    const { data: coluna, error: fetchError } = await supabase
+      .from('kanban_colunas')
+      .select('clientes_ids')
+      .eq('id', columnId)
+      .single();
+
+    if (fetchError) {
+      console.error('❌ Erro ao buscar coluna:', fetchError);
+      throw fetchError;
+    }
+
+    if (!coluna) {
+      console.warn(`⚠️ Coluna ${columnId} não encontrada`);
+      return;
+    }
+
+    const clientesIds = coluna.clientes_ids || [];
+    const clienteIdStr = String(clienteId);
+    
+    // Normalizar IDs para comparação (todos como string)
+    const clientesIdsStr = clientesIds.map(id => String(id));
+    
+    // Remover o cliente se estiver na lista
+    const novosClientesIds = clientesIdsStr.filter(id => id !== clienteIdStr);
+    
+    console.log(`💾 Removendo cliente. Antes: ${clientesIdsStr.length}, Depois: ${novosClientesIds.length}`);
+
+    const { error: updateError } = await supabase
+      .from('kanban_colunas')
+      .update({ clientes_ids: novosClientesIds })
+      .eq('id', columnId);
+
+    if (updateError) {
+      console.error('❌ Erro ao atualizar coluna:', updateError);
+      throw updateError;
+    }
+
+    console.log(`✅ Cliente ${clienteId} removido da coluna ${columnId}`);
+  } catch (error) {
+    console.error('❌ Erro ao remover cliente da coluna:', error);
+    throw error;
+  }
+}
+
 // Associar clientes existentes automaticamente às colunas baseado no status_plano
 export async function associarClientesPorStatus() {
   if (!isSupabaseConnected()) {
