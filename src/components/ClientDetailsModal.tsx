@@ -239,8 +239,20 @@ HÁBITOS E COMPORTAMENTOS:
         ficha += `Reavaliação ${index + 1} (${reav.data_criacao ? new Date(reav.data_criacao).toLocaleDateString('pt-BR') : 'Data não informada'}):
 `;
         if (reav.peso_atual) ficha += `• Peso Atual: ${reav.peso_atual} kg\n`;
-        if (reav.sintomas) ficha += `• Sintomas: ${reav.sintomas}\n`;
-        if (reav.observacoes) ficha += `• Observações: ${reav.observacoes}\n`;
+        if (reav.mudancas_corpo_disposicao) ficha += `• Mudanças no Corpo/Disposição: ${reav.mudancas_corpo_disposicao}\n`;
+        if (reav.energia_dia) ficha += `• Energia no Dia: ${reav.energia_dia}\n`;
+        if (reav.intestino_sono) ficha += `• Intestino/Sono: ${reav.intestino_sono}\n`;
+        if (reav.rotina_alimentacao_organizada) ficha += `• Rotina Alimentação Organizada: ${reav.rotina_alimentacao_organizada}\n`;
+        if (reav.refeicoes_faceis) ficha += `• Refeições Fáceis: ${reav.refeicoes_faceis}\n`;
+        if (reav.refeicoes_desafiadoras) ficha += `• Refeições Desafiadoras: ${reav.refeicoes_desafiadoras}\n`;
+        if (reav.agua_suplementos) ficha += `• Água/Suplementos: ${reav.agua_suplementos}\n`;
+        if (reav.atividade_fisica) ficha += `• Atividade Física: ${reav.atividade_fisica}\n`;
+        if (reav.o_que_ajudou) ficha += `• O que Ajudou: ${reav.o_que_ajudou}\n`;
+        if (reav.o_que_atrapalhou) ficha += `• O que Atrapalhou: ${reav.o_que_atrapalhou}\n`;
+        if (reav.programa_ajudou) ficha += `• Programa Ajudou: ${reav.programa_ajudou}\n`;
+        if (reav.programa_ajudar_mais) ficha += `• Programa Ajudar Mais: ${reav.programa_ajudar_mais}\n`;
+        if (reav.mudar_estrategia) ficha += `• Mudar Estratégia: ${reav.mudar_estrategia}\n`;
+        if (reav.maior_foco_nova_fase) ficha += `• Maior Foco Nova Fase: ${reav.maior_foco_nova_fase}\n`;
         ficha += `\n`;
       });
     }
