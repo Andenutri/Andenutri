@@ -55,6 +55,20 @@ export default function ClientesView({ sidebarOpen, initialViewMode = 'lista' }:
     setAllClientes(clientesFiltrados);
   };
 
+  // Função para excluir cliente
+  const handleExcluirCliente = async (clienteId: string) => {
+    try {
+      const sucesso = await deleteCliente(clienteId);
+      if (sucesso) {
+        await reloadClientes();
+        alert('✅ Cliente excluído com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao excluir cliente:', error);
+      alert('❌ Erro ao excluir cliente. Verifique o console.');
+    }
+  };
+
   return (
     <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-0 md:ml-80' : 'ml-0'}`}>
       {/* Header Unificado com Toggle de Visualização */}
