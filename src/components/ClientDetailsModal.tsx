@@ -14,7 +14,8 @@ import AgendarReavaliacaoModal from './AgendarReavaliacaoModal';
 import { getReavaliacoesCliente, type ReavaliacaoResposta } from '@/data/reavaliacoesData';
 import { getAvaliacoesByCliente } from '@/data/avaliacoesData';
 import { getAvaliacoesEmocionaisCliente, getAvaliacoesComportamentaisCliente } from '@/data/avaliacoesEmocionaisData';
-import { getAllClientes } from '@/data/clientesData';
+import { getAllClientes, deleteCliente } from '@/data/clientesData';
+import { getPagamentosByCliente, calcularTotalPagamentos, FORMAS_PAGAMENTO } from '@/data/pagamentosData';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -46,6 +47,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente: clienteIn
   const [reavaliacoes, setReavaliacoes] = useState<ReavaliacaoResposta[]>([]);
   const [loadingReavaliacoes, setLoadingReavaliacoes] = useState(false);
   const [copiando, setCopiando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   // Sincronizar cliente quando o prop mudar
   useEffect(() => {
@@ -113,8 +115,26 @@ Endereço: ${cliente.endereco_completo || 'Não informado'}
 Status do Programa: ${cliente.status_plano || 'Não definido'}
 ${(cliente as any).is_lead ? 'Tipo: LEAD (Ainda não comprou programa de 90 dias)' : 'Tipo: CLIENTE (Comprou programa de 90 dias)'}
 ${(cliente as any).data_compra_programa ? `Data de Compra do Programa: ${new Date((cliente as any).data_compra_programa).toLocaleDateString('pt-BR')}` : ''}
+${(cliente as any).data_compra_programa ? (() => {
+  const dataVencimento = new Date((cliente as any).data_compra_programa);
+  dataVencimento.setDate(dataVencimento.getDate() + 90);
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  dataVencimento.setHours(0, 0, 0, 0);
+  const diasRestantes = Math.ceil((dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+  let statusVencimento = '';
+  if (diasRestantes < 0) {
+    statusVencimento = ` (VENCIDO há ${Math.abs(diasRestantes)} dias)`;
+  } else if (diasRestantes === 0) {
+    statusVencimento = ' (VENCE HOJE)';
+  } else if (diasRestantes <= 7) {
+    statusVencimento = ` (Vence em ${diasRestantes} dias)`;
+  }
+  return `Vencimento do Programa: ${dataVencimento.toLocaleDateString('pt-BR')}${statusVencimento}`;
+})() : ''}
 ${cliente.codigo_reavaliacao ? `Código de Reavaliação: ${cliente.codigo_reavaliacao}` : ''}
 ${cliente.perfil ? `Perfil: ${cliente.perfil}` : ''}
+${(cliente as any).suplementos ? `Suplementos: ${(cliente as any).suplementos}` : ''}
 
 `;
 
@@ -286,6 +306,32 @@ HÁBITOS E COMPORTAMENTOS:
       });
     }
 
+    // Pagamentos
+    try {
+      const pagamentos = await getPagamentosByCliente(cliente.id);
+      if (pagamentos.length > 0) {
+        const totalPagamentos = calcularTotalPagamentos(pagamentos);
+        ficha += `💰 PAGAMENTOS
+───────────────────────────────────────────────────────────
+Total Pago: R$ ${totalPagamentos.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+Total de Pagamentos: ${pagamentos.length}
+
+`;
+        pagamentos.forEach((pag, index) => {
+          const formaPagamento = FORMAS_PAGAMENTO.find(f => f.value === pag.forma_pagamento)?.label || pag.forma_pagamento;
+          ficha += `Pagamento ${index + 1}:
+• Data: ${new Date(pag.data_pagamento).toLocaleDateString('pt-BR')}
+• Valor: R$ ${Number(pag.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+• Forma de Pagamento: ${formaPagamento}
+${pag.observacoes ? `• Observações: ${pag.observacoes}` : ''}
+
+`;
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar pagamentos:', error);
+    }
+
     ficha += `═══════════════════════════════════════════════════════════
 Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
 ═══════════════════════════════════════════════════════════`;
@@ -332,6 +378,33 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
     }
   }
 
+  // Função para excluir cliente
+  async function handleExcluirCliente() {
+    if (!cliente) return;
+
+    const confirmacao = confirm(`⚠️ ATENÇÃO: Tem certeza que deseja EXCLUIR o cliente "${cliente.nome}"?\n\nEsta ação não pode ser desfeita e irá excluir:\n- Todos os dados do cliente\n- Todas as avaliações\n- Todos os formulários\n- Todos os pagamentos\n- Histórico completo\n\nDeseja continuar?`);
+
+    if (!confirmacao) {
+      return;
+    }
+
+    setExcluindo(true);
+    try {
+      const sucesso = await deleteCliente(cliente.id);
+      if (sucesso) {
+        alert('✅ Cliente excluído com sucesso!');
+        onClose();
+        // Recarregar a página para atualizar as listas
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error('Erro ao excluir cliente:', error);
+      alert('❌ Erro ao excluir cliente. Verifique o console.');
+    } finally {
+      setExcluindo(false);
+    }
+  }
+
   if (!isOpen || !cliente) return null;
 
   return (
@@ -355,6 +428,14 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
                 title="Exportar ficha completa como arquivo de texto"
               >
                 💾 Exportar
+              </button>
+              <button
+                onClick={handleExcluirCliente}
+                disabled={excluindo}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-semibold disabled:opacity-50 flex items-center gap-2"
+                title="Excluir cliente permanentemente"
+              >
+                {excluindo ? '⏳' : '🗑️'} {excluindo ? 'Excluindo...' : 'Excluir'}
               </button>
               <button
                 onClick={onClose}
@@ -430,6 +511,43 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
                       )}
                       {(cliente as any).endereco_completo && (
                         <div className="col-span-2"><strong>Endereço:</strong> {(cliente as any).endereco_completo}</div>
+                      )}
+                      {(cliente as any).data_proxima_consulta && (
+                        <div><strong>Próxima Consulta:</strong> {new Date((cliente as any).data_proxima_consulta).toLocaleDateString('pt-BR')}</div>
+                      )}
+                      {(cliente as any).suplementos && (
+                        <div className="col-span-2">
+                          <strong>💊 Suplementos:</strong>
+                          <div className="mt-1 p-2 bg-gray-50 rounded border border-gray-200 whitespace-pre-wrap text-sm">
+                            {(cliente as any).suplementos}
+                          </div>
+                        </div>
+                      )}
+                      {(cliente as any).data_compra_programa && (
+                        <>
+                          <div><strong>Data de Compra do Programa:</strong> {new Date((cliente as any).data_compra_programa).toLocaleDateString('pt-BR')}</div>
+                          <div>
+                            <strong>Vencimento do Programa:</strong> 
+                            <span className={`ml-2 font-semibold ${
+                              (() => {
+                                const dataVencimento = new Date((cliente as any).data_compra_programa);
+                                dataVencimento.setDate(dataVencimento.getDate() + 90);
+                                const hoje = new Date();
+                                hoje.setHours(0, 0, 0, 0);
+                                dataVencimento.setHours(0, 0, 0, 0);
+                                if (dataVencimento < hoje) return 'text-red-600';
+                                if (dataVencimento.getTime() - hoje.getTime() <= 7 * 24 * 60 * 60 * 1000) return 'text-orange-600';
+                                return 'text-green-600';
+                              })()
+                            }`}>
+                              {(() => {
+                                const dataVencimento = new Date((cliente as any).data_compra_programa);
+                                dataVencimento.setDate(dataVencimento.getDate() + 90);
+                                return dataVencimento.toLocaleDateString('pt-BR');
+                              })()}
+                            </span>
+                          </div>
+                        </>
                       )}
                     </div>
                     {/* Campo Perfil/Descrição */}

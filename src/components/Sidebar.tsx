@@ -15,6 +15,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen, setView }: Sideba
     { icon: '📊', label: 'Dashboard', view: 'dashboard', link: '/' },
     { icon: '👥', label: 'Clientes', view: 'clientes', link: '/' },
     { icon: '📋', label: 'Leads', view: 'leads', link: '/' },
+    { icon: '💰', label: 'Financeiro', view: 'financeiro', link: '/' },
     { icon: '📅', label: 'Agenda', view: 'agenda', link: '/agenda' },
     { icon: '📏', label: 'Avaliações', view: 'avaliacoes', link: '/' },
     { icon: '🔗', label: 'Links do Formulário', view: 'links-formulario', link: '/' },

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllClientes, ClienteComFormulario } from '@/data/clientesData';
+import { getAllClientes, ClienteComFormulario, deleteCliente } from '@/data/clientesData';
 import ClientList from './ClientList';
 import KanbanBoard from './KanbanBoard';
 import AddClientModal from './AddClientModal';
@@ -9,14 +9,24 @@ import ClientDetailsModal from './ClientDetailsModal';
 
 type ViewMode = 'lista' | 'trello';
 
-export default function ClientesView({ sidebarOpen }: { sidebarOpen: boolean }) {
-  const [viewMode, setViewMode] = useState<ViewMode>('lista');
+interface ClientesViewProps {
+  sidebarOpen: boolean;
+  initialViewMode?: ViewMode;
+}
+
+export default function ClientesView({ sidebarOpen, initialViewMode = 'lista' }: ClientesViewProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>(initialViewMode);
   const [allClientes, setAllClientes] = useState<ClienteComFormulario[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [showClientModal, setShowClientModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
+
+  // Sincronizar viewMode quando initialViewMode mudar (ex: quando vem do Dashboard)
+  useEffect(() => {
+    setViewMode(initialViewMode);
+  }, [initialViewMode]);
 
   // Carregar clientes UMA ÚNICA VEZ - compartilhado entre as duas visualizações
   // Filtrar apenas CLIENTES (is_lead = false), não leads
@@ -156,14 +166,32 @@ export default function ClientesView({ sidebarOpen }: { sidebarOpen: boolean }) 
                 .map((cliente) => (
                 <div
                   key={cliente.id}
-                  onClick={() => {
-                    setSelectedClient(cliente);
-                    setShowClientModal(true);
-                  }}
-                  className="block bg-white rounded-xl shadow-lg p-4 md:p-6 hover:scale-105 transition-transform cursor-pointer border-l-4 border-amber-500"
+                  className="block bg-white rounded-xl shadow-lg p-4 md:p-6 hover:scale-105 transition-transform border-l-4 border-amber-500 relative"
                 >
                   <div className="mb-2">
-                    <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-1">{cliente.nome}</h3>
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 
+                        onClick={() => {
+                          setSelectedClient(cliente);
+                          setShowClientModal(true);
+                        }}
+                        className="text-lg md:text-xl font-bold text-gray-800 cursor-pointer flex-1"
+                      >
+                        {cliente.nome}
+                      </h3>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`⚠️ Tem certeza que deseja excluir o cliente "${cliente.nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+                            handleExcluirCliente(cliente.id);
+                          }
+                        }}
+                        className="text-red-500 hover:text-red-700 text-xl font-bold ml-2 px-2"
+                        title="Excluir cliente"
+                      >
+                        ×
+                      </button>
+                    </div>
                     {/* Bolinhas de Status */}
                     <div className="flex gap-3 items-center flex-wrap">
                       <div className="flex items-center gap-1">
@@ -194,6 +222,26 @@ export default function ClientesView({ sidebarOpen }: { sidebarOpen: boolean }) 
                   <p className="text-xs md:text-sm text-gray-600 mb-1">📱 {cliente.whatsapp || cliente.telefone || 'Sem telefone'}</p>
                   {cliente.formulario && (
                     <p className="text-xs md:text-sm text-gray-600 mb-1">⚖️ {cliente.formulario.peso_atual}kg → {cliente.formulario.peso_desejado}kg</p>
+                  )}
+                  {(cliente as any).data_compra_programa && (
+                    <p className={`text-xs md:text-sm mb-1 font-semibold ${
+                      (() => {
+                        const dataVencimento = new Date((cliente as any).data_compra_programa);
+                        dataVencimento.setDate(dataVencimento.getDate() + 90);
+                        const hoje = new Date();
+                        hoje.setHours(0, 0, 0, 0);
+                        dataVencimento.setHours(0, 0, 0, 0);
+                        if (dataVencimento < hoje) return 'text-red-600';
+                        if (dataVencimento.getTime() - hoje.getTime() <= 7 * 24 * 60 * 60 * 1000) return 'text-orange-600';
+                        return 'text-green-600';
+                      })()
+                    }`}>
+                      📅 Vence: {(() => {
+                        const dataVencimento = new Date((cliente as any).data_compra_programa);
+                        dataVencimento.setDate(dataVencimento.getDate() + 90);
+                        return dataVencimento.toLocaleDateString('pt-BR');
+                      })()}
+                    </p>
                   )}
                 </div>
               ))}

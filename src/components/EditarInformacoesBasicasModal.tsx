@@ -30,6 +30,8 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
     herbalife_senha: (cliente as any)?.herbalife_senha || '',
     indicado_por: (cliente as any)?.indicado_por || '',
     is_lead: (cliente as any)?.is_lead || false,
+    data_proxima_consulta: (cliente as any)?.data_proxima_consulta || '',
+    suplementos: (cliente as any)?.suplementos || '',
   });
 
   const [saving, setSaving] = useState(false);
@@ -56,6 +58,8 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
         herbalife_senha: (cliente as any)?.herbalife_senha || '',
         indicado_por: (cliente as any)?.indicado_por || '',
         is_lead: (cliente as any)?.is_lead || false,
+        data_proxima_consulta: (cliente as any)?.data_proxima_consulta || '',
+        suplementos: (cliente as any)?.suplementos || '',
       });
     }
   }, [isOpen, cliente]);
@@ -91,6 +95,8 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
         herbalife_senha: formData.herbalife_senha || undefined,
         indicado_por: formData.indicado_por || undefined,
         is_lead: isLeadFinal,
+        data_proxima_consulta: formData.data_proxima_consulta || undefined,
+        suplementos: formData.suplementos || undefined,
       };
 
       if (cliente?.id) {
@@ -204,6 +210,18 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">📝 Use este campo para anotações pessoais sobre o cliente</p>
+              </div>
+
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">💊 Suplementos</label>
+                <textarea
+                  value={formData.suplementos}
+                  onChange={(e) => setFormData({ ...formData, suplementos: e.target.value })}
+                  placeholder="Informe os suplementos que o cliente está usando (ex: Whey protein, creatina, multivitamínico, etc.)"
+                  rows={3}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">💊 Preencha livremente as informações sobre suplementos do cliente</p>
               </div>
             </div>
           </div>
@@ -355,6 +373,16 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
                     )}
                   </span>
                 </label>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">📅 Próxima Consulta</label>
+                <input
+                  type="date"
+                  value={formData.data_proxima_consulta ? new Date(formData.data_proxima_consulta).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setFormData({ ...formData, data_proxima_consulta: e.target.value || undefined })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">Defina a data da próxima consulta com este cliente</p>
               </div>
             </div>
           </div>

@@ -11,6 +11,8 @@ export interface ClienteComFormulario {
   codigo_reavaliacao?: string;
   perfil?: string | null;
   is_lead?: boolean;
+  data_proxima_consulta?: string | null;
+  data_compra_programa?: string | null;
   column_id?: string | null;
   formulario_preenchido: boolean;
   formulario: {

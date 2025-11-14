@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAllClientes, ClienteComFormulario } from '@/data/clientesData';
+import { getAllClientes, ClienteComFormulario, deleteCliente } from '@/data/clientesData';
 import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
+import EditarInformacoesBasicasModal from './EditarInformacoesBasicasModal';
 import { syncAllColumns, Column, getKanbanColumns, saveKanbanColumn, associarClientesPorStatus, limparDuplicatasColunasStatus } from '@/data/kanbanData';
 
 interface KanbanBoardProps {
@@ -18,6 +19,9 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
   const [loadingClientes, setLoadingClientes] = useState(true);
   const [columns, setColumns] = useState<Column[]>([]);
   const [loadingColumns, setLoadingColumns] = useState(true);
+  const [showEditarBasicasModal, setShowEditarBasicasModal] = useState(false);
+  const [clienteParaEditar, setClienteParaEditar] = useState<ClienteComFormulario | null>(null);
+  const [ordenacaoPorColuna, setOrdenacaoPorColuna] = useState<Record<string, 'alfabetica' | 'alfabetica_inversa' | 'vencimento_proximo' | 'vencimento_distante' | 'compra_recente' | 'compra_antiga' | 'proxima_consulta' | 'criacao_recente' | 'criacao_antiga'>>({});
 
   // Se clientes foram passados externamente, usar eles (sincronização automática)
   useEffect(() => {
@@ -477,12 +481,130 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
     }
   };
 
+  const handleExcluirCliente = async (clienteId: string) => {
+    try {
+      const sucesso = await deleteCliente(clienteId);
+      if (sucesso) {
+        // Remover do estado local
+        setAllClientes(prev => prev.filter(c => c.id !== clienteId));
+        
+        // Notificar componente pai para recarregar
+        if (onClientesChange) {
+          onClientesChange();
+        }
+        
+        // Recarregar colunas para remover o cliente das colunas
+        const colunasAtualizadas = await getKanbanColumns();
+        setColumns(colunasAtualizadas);
+        
+        alert('✅ Cliente excluído com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao excluir cliente:', error);
+      alert('❌ Erro ao excluir cliente. Verifique o console.');
+    }
+  };
+
   const getClienteById = (id: string) => {
     return allClientes.find(c => c.id === id);
   };
 
   const getCoresByColumn = (colorId: string) => {
     return cores.find(c => c.id === colorId) || cores[7];
+  };
+
+  // Função para ordenar clientes
+  const ordenarClientes = (clientes: ClienteComFormulario[], columnId: string): ClienteComFormulario[] => {
+    const clientesOrdenados = [...clientes];
+    const ordenacao = ordenacaoPorColuna[columnId] || 'alfabetica';
+
+    switch (ordenacao) {
+      case 'alfabetica':
+        return clientesOrdenados.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      
+      case 'alfabetica_inversa':
+        return clientesOrdenados.sort((a, b) => b.nome.localeCompare(a.nome, 'pt-BR'));
+      
+      case 'vencimento_proximo':
+        return clientesOrdenados.sort((a, b) => {
+          const vencA = (a as any).data_compra_programa 
+            ? new Date((a as any).data_compra_programa).getTime() + (90 * 24 * 60 * 60 * 1000)
+            : Infinity;
+          const vencB = (b as any).data_compra_programa 
+            ? new Date((b as any).data_compra_programa).getTime() + (90 * 24 * 60 * 60 * 1000)
+            : Infinity;
+          return vencA - vencB; // Mais próximo primeiro
+        });
+      
+      case 'vencimento_distante':
+        return clientesOrdenados.sort((a, b) => {
+          const vencA = (a as any).data_compra_programa 
+            ? new Date((a as any).data_compra_programa).getTime() + (90 * 24 * 60 * 60 * 1000)
+            : 0;
+          const vencB = (b as any).data_compra_programa 
+            ? new Date((b as any).data_compra_programa).getTime() + (90 * 24 * 60 * 60 * 1000)
+            : 0;
+          return vencB - vencA; // Mais distante primeiro
+        });
+      
+      case 'compra_recente':
+        return clientesOrdenados.sort((a, b) => {
+          const dataA = (a as any).data_compra_programa 
+            ? new Date((a as any).data_compra_programa).getTime()
+            : 0;
+          const dataB = (b as any).data_compra_programa 
+            ? new Date((b as any).data_compra_programa).getTime()
+            : 0;
+          return dataB - dataA; // Mais recente primeiro
+        });
+      
+      case 'compra_antiga':
+        return clientesOrdenados.sort((a, b) => {
+          const dataA = (a as any).data_compra_programa 
+            ? new Date((a as any).data_compra_programa).getTime()
+            : Infinity;
+          const dataB = (b as any).data_compra_programa 
+            ? new Date((b as any).data_compra_programa).getTime()
+            : Infinity;
+          return dataA - dataB; // Mais antiga primeiro
+        });
+      
+      case 'proxima_consulta':
+        return clientesOrdenados.sort((a, b) => {
+          const dataA = (a as any).data_proxima_consulta 
+            ? new Date((a as any).data_proxima_consulta).getTime()
+            : Infinity;
+          const dataB = (b as any).data_proxima_consulta 
+            ? new Date((b as any).data_proxima_consulta).getTime()
+            : Infinity;
+          return dataA - dataB; // Mais próxima primeiro
+        });
+      
+      case 'criacao_recente':
+        return clientesOrdenados.sort((a, b) => {
+          const dataA = (a as any).data_criacao 
+            ? new Date((a as any).data_criacao).getTime()
+            : 0;
+          const dataB = (b as any).data_criacao 
+            ? new Date((b as any).data_criacao).getTime()
+            : 0;
+          return dataB - dataA; // Mais recente primeiro
+        });
+      
+      case 'criacao_antiga':
+        return clientesOrdenados.sort((a, b) => {
+          const dataA = (a as any).data_criacao 
+            ? new Date((a as any).data_criacao).getTime()
+            : Infinity;
+          const dataB = (b as any).data_criacao 
+            ? new Date((b as any).data_criacao).getTime()
+            : Infinity;
+          return dataA - dataB; // Mais antiga primeiro
+        });
+      
+      default:
+        return clientesOrdenados;
+    }
   };
 
   return (
@@ -494,19 +616,21 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
             <h1 className="text-2xl md:text-3xl font-bold text-amber-700">📋 Trello</h1>
             <p className="text-sm md:text-base text-gray-600 mt-1">Organize seus clientes em colunas</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
-            <button
-              onClick={() => setShowAddColumnModal(true)}
-              className="w-full sm:w-auto bg-amber-50 text-amber-700 px-4 py-2 md:px-6 md:py-3 rounded-lg hover:bg-amber-100 transition-colors border-2 border-amber-200 font-semibold text-sm md:text-base"
-            >
-              ➕ Nova Coluna
-            </button>
-            <button
-              onClick={() => setShowAddClientModal(true)}
-              className="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg hover:scale-105 transition-all shadow-lg font-semibold text-sm md:text-base"
-            >
-              👤 Adicionar Cliente
-            </button>
+          <div className="flex flex-col sm:flex-row gap-2 md:gap-4 items-start sm:items-center">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setShowAddColumnModal(true)}
+                className="w-full sm:w-auto bg-amber-50 text-amber-700 px-4 py-2 md:px-6 md:py-3 rounded-lg hover:bg-amber-100 transition-colors border-2 border-amber-200 font-semibold text-sm md:text-base"
+              >
+                ➕ Nova Coluna
+              </button>
+              <button
+                onClick={() => setShowAddClientModal(true)}
+                className="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2 md:px-6 md:py-3 rounded-lg hover:scale-105 transition-all shadow-lg font-semibold text-sm md:text-base"
+              >
+                👤 Adicionar Cliente
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -548,7 +672,7 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
                 if (statusEsperado) {
                   return {
                     ...cliente,
-                    status_plano: statusEsperado, // Status determinado pela coluna
+                    status_plano: statusEsperado as 'ativo' | 'inativo' | 'pausado', // Status determinado pela coluna
                     // Para exibição: mostrar status da coluna, não do cliente
                   };
                 }
@@ -581,8 +705,11 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
                 });
               }
               
-              // Usar clientes filtrados para renderização
-              const clientesParaRenderizar = clientesFiltrados;
+              // Ordenar clientes filtrados (por coluna)
+              const clientesOrdenados = ordenarClientes(clientesFiltrados, column.id);
+              
+              // Usar clientes ordenados para renderização
+              const clientesParaRenderizar = clientesOrdenados;
 
               const isDraggingColumn = draggedColumn === column.id;
               const isDragOver = dragOverColumn === column.id;
@@ -639,15 +766,39 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
                       <span className="text-lg">↕️</span>
                       <span className="text-sm md:text-base">{column.nome} ({column.clientes.length})</span>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removerColuna(column.id);
-                      }}
-                      className="text-xs hover:bg-white/30 px-2 py-1 rounded"
-                    >
-                      🗑️
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={ordenacaoPorColuna[column.id] || 'alfabetica'}
+                        onChange={(e) => {
+                          setOrdenacaoPorColuna({
+                            ...ordenacaoPorColuna,
+                            [column.id]: e.target.value as any
+                          });
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs px-2 py-1 bg-white/80 rounded border border-white/50 focus:outline-none focus:ring-2 focus:ring-white"
+                        title="Ordenar clientes desta coluna"
+                      >
+                        <option value="alfabetica">📝 A-Z</option>
+                        <option value="alfabetica_inversa">📝 Z-A</option>
+                        <option value="vencimento_proximo">⏰ Venc. próximo</option>
+                        <option value="vencimento_distante">⏰ Venc. distante</option>
+                        <option value="compra_recente">📅 Compra recente</option>
+                        <option value="compra_antiga">📅 Compra antiga</option>
+                        <option value="proxima_consulta">📆 Próx. consulta</option>
+                        <option value="criacao_recente">🆕 Criado recente</option>
+                        <option value="criacao_antiga">🆕 Criado antigo</option>
+                      </select>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removerColuna(column.id);
+                        }}
+                        className="text-xs hover:bg-white/30 px-2 py-1 rounded"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
 
                   {/* Botão Adicionar Cliente - Sempre Visível no Topo */}
@@ -700,7 +851,19 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
                         {/* Nome e Bolinhas de Status */}
                         <div className="mb-2">
                           <div className="flex items-center justify-between mb-1">
-                            <div className="font-bold text-gray-800 text-sm md:text-base">{cliente.nome}</div>
+                            <div className="font-bold text-gray-800 text-sm md:text-base flex-1">{cliente.nome}</div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm(`⚠️ Tem certeza que deseja excluir o cliente "${cliente.nome}"?\n\nEsta ação não pode ser desfeita.`)) {
+                                  handleExcluirCliente(cliente.id);
+                                }
+                              }}
+                              className="text-red-500 hover:text-red-700 text-lg font-bold ml-2"
+                              title="Excluir cliente"
+                            >
+                              ×
+                            </button>
                           </div>
                           {/* Bolinhas de Identificação */}
                           <div className="flex gap-2 items-center flex-wrap">
@@ -746,10 +909,33 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
                               </div>
                             </>
                           )}
-                          <div className="flex items-center gap-1 text-blue-600">
-                            <span>📅 Próxima consulta:</span>
-                            <span className="font-semibold">20/02/2025</span>
-                          </div>
+                          {(cliente as any).data_proxima_consulta && (
+                            <div className="flex items-center gap-1 text-blue-600">
+                              <span>📅 Próxima consulta:</span>
+                              <span className="font-semibold">{new Date((cliente as any).data_proxima_consulta).toLocaleDateString('pt-BR')}</span>
+                            </div>
+                          )}
+                          {(cliente as any).data_compra_programa && (
+                            <div className={`flex items-center gap-1 font-semibold ${
+                              (() => {
+                                const dataVencimento = new Date((cliente as any).data_compra_programa);
+                                dataVencimento.setDate(dataVencimento.getDate() + 90);
+                                const hoje = new Date();
+                                hoje.setHours(0, 0, 0, 0);
+                                dataVencimento.setHours(0, 0, 0, 0);
+                                if (dataVencimento < hoje) return 'text-red-600';
+                                if (dataVencimento.getTime() - hoje.getTime() <= 7 * 24 * 60 * 60 * 1000) return 'text-orange-600';
+                                return 'text-green-600';
+                              })()
+                            }`}>
+                              <span>📅 Vence:</span>
+                              <span>{(() => {
+                                const dataVencimento = new Date((cliente as any).data_compra_programa);
+                                dataVencimento.setDate(dataVencimento.getDate() + 90);
+                                return dataVencimento.toLocaleDateString('pt-BR');
+                              })()}</span>
+                            </div>
+                          )}
                         </div>
                         
                         {/* Divider */}
@@ -757,9 +943,26 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
                         
                         {/* Observações Personalizadas */}
                         <div className="text-xs text-gray-500 mt-2">
-                          <div className="font-semibold text-gray-700 mb-1">📝 Observações:</div>
-                          <div className="max-h-20 overflow-y-auto text-xs">
-                            Protocolo: Mudança gradual{cliente.formulario_preenchido && ' • Formulário preenchido'}
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="font-semibold text-gray-700">📝 Observações:</div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setClienteParaEditar(cliente);
+                                setShowEditarBasicasModal(true);
+                              }}
+                              className="text-amber-600 hover:text-amber-700 text-xs font-semibold px-2 py-1 rounded hover:bg-amber-50 transition-colors"
+                              title="Editar observações"
+                            >
+                              ✏️ Editar
+                            </button>
+                          </div>
+                          <div className="max-h-20 overflow-y-auto text-xs whitespace-pre-wrap">
+                            {(cliente as any).perfil && (cliente as any).perfil.trim() ? (
+                              (cliente as any).perfil
+                            ) : (
+                              <span className="text-gray-400 italic">Nenhuma observação adicionada ainda. Clique em "Editar" para adicionar.</span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -859,6 +1062,25 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
           }}
           defaultColumn={selectedColumnForClient}
         />
+
+      {/* Modal Editar Informações Básicas (para editar observações) */}
+      {showEditarBasicasModal && clienteParaEditar && (
+        <EditarInformacoesBasicasModal
+          isOpen={showEditarBasicasModal}
+          onClose={async () => {
+            setShowEditarBasicasModal(false);
+            setClienteParaEditar(null);
+            // Recarregar clientes após edição
+            if (clientesExternos === undefined) {
+              const clientesAtualizados = await getAllClientes();
+              setAllClientes(clientesAtualizados);
+            } else {
+              onClientesChange?.();
+            }
+          }}
+          cliente={clienteParaEditar}
+        />
+      )}
     </div>
   );
 }

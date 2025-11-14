@@ -6,6 +6,7 @@ import Dashboard from '@/components/Dashboard';
 import ClientesView from '@/components/ClientesView';
 import LeadsView from '@/components/LeadsView';
 import AvaliacoesView from '@/components/AvaliacoesView';
+import FinanceiroView from '@/components/FinanceiroView';
 import GerenciarLinksFormulario from '@/components/GerenciarLinksFormulario';
 import MeuLinkFormulario from '@/components/MeuLinkFormulario';
 
@@ -47,8 +48,10 @@ export default function Home() {
       
       <div className="pt-16 md:pt-20">
         {view === 'dashboard' && <Dashboard sidebarOpen={sidebarOpen} setView={setView} />}
-        {(view === 'clientes' || view === 'trello') && <ClientesView sidebarOpen={sidebarOpen} />}
+        {view === 'clientes' && <ClientesView sidebarOpen={sidebarOpen} initialViewMode="lista" />}
+        {view === 'trello' && <ClientesView sidebarOpen={sidebarOpen} initialViewMode="trello" />}
         {view === 'leads' && <LeadsView sidebarOpen={sidebarOpen} />}
+        {view === 'financeiro' && <FinanceiroView sidebarOpen={sidebarOpen} />}
         {/* {view === 'agenda' && <AgendaView sidebarOpen={sidebarOpen} />} */}
         {view === 'avaliacoes' && <AvaliacoesView sidebarOpen={sidebarOpen} />}
         {view === 'links-formulario' && (

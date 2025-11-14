@@ -204,6 +204,9 @@ const CAMPOS_VALIDOS_CLIENTES = [
   'indicado_por',
   'perfil',
   'is_lead',
+  'data_proxima_consulta',
+  'suplementos',
+  'data_compra_programa',
   'user_id',
   'codigo_reavaliacao',
   'data_criacao',
@@ -375,6 +378,7 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
         status_programa: cliente.status_plano,
         perfil: cliente.perfil || null,
         is_lead: cliente.is_lead || false,
+        data_proxima_consulta: (cliente as any).data_proxima_consulta || null,
         data_atualizacao: new Date().toISOString(),
       });
 
@@ -455,6 +459,7 @@ export async function saveCliente(cliente: Partial<ClienteComFormulario>) {
         status_programa: cliente.status_plano || 'ativo',
         perfil: cliente.perfil || null,
         is_lead: cliente.is_lead || false,
+        data_proxima_consulta: (cliente as any).data_proxima_consulta || null,
         user_id: userId, // Associar ao usuário atual
         data_criacao: new Date().toISOString(),
       });
@@ -524,6 +529,78 @@ export async function getClienteById(id: string): Promise<ClienteComFormulario |
   } catch (error) {
     console.error('Erro ao buscar cliente:', error);
     return undefined;
+  }
+}
+
+// Função para deletar cliente
+export async function deleteCliente(clienteId: string): Promise<boolean> {
+  if (!isSupabaseConnected()) {
+    console.warn('⚠️ Supabase não configurado.');
+    return false;
+  }
+
+  try {
+    const { supabase } = await import('../lib/supabase');
+    const { getCurrentUserId } = await import('../utils/authHelpers');
+    
+    const userId = await getCurrentUserId();
+    
+    if (!userId) {
+      alert('❌ Você precisa estar autenticado para deletar clientes.');
+      return false;
+    }
+
+    // Verificar se o cliente pertence ao usuário
+    const { data: cliente, error: fetchError } = await supabase
+      .from('clientes')
+      .select('user_id, nome')
+      .eq('id', clienteId)
+      .single();
+
+    if (fetchError || !cliente) {
+      alert('❌ Cliente não encontrado.');
+      return false;
+    }
+
+    if (cliente.user_id !== userId) {
+      alert('❌ Você não tem permissão para deletar este cliente.');
+      return false;
+    }
+
+    // Deletar cliente (cascade vai deletar registros relacionados)
+    const { error } = await supabase
+      .from('clientes')
+      .delete()
+      .eq('id', clienteId)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Erro ao deletar cliente:', error);
+      alert(`❌ Erro ao deletar cliente: ${error.message}`);
+      return false;
+    }
+
+    // Remover cliente de todas as colunas do Kanban
+    try {
+      const { getKanbanColumns } = await import('./kanbanData');
+      const colunas = await getKanbanColumns();
+      
+      for (const coluna of colunas) {
+        if (coluna.clientes && coluna.clientes.includes(clienteId)) {
+          const { removeClientFromColumn } = await import('./kanbanData');
+          await removeClientFromColumn(coluna.id, clienteId);
+        }
+      }
+    } catch (kanbanError) {
+      console.warn('⚠️ Erro ao remover cliente das colunas do Kanban:', kanbanError);
+      // Não bloquear a exclusão se houver erro no Kanban
+    }
+
+    return true;
+  } catch (error: any) {
+    console.error('Erro ao deletar cliente:', error);
+    alert(`❌ Erro ao deletar cliente: ${error.message}`);
+    return false;
   }
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
-import { getAllClientes, saveCliente } from '@/data/clientesData';
+import { getAllClientes, saveCliente, deleteCliente } from '@/data/clientesData';
 import { supabase } from '@/lib/supabase';
 import ClientDetailsModal from './ClientDetailsModal';
 
@@ -42,6 +42,19 @@ export default function LeadsView({ sidebarOpen }: { sidebarOpen: boolean }) {
       console.error('Erro ao carregar leads:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExcluirLead = async (leadId: string) => {
+    try {
+      const sucesso = await deleteCliente(leadId);
+      if (sucesso) {
+        await loadLeads();
+        alert('✅ Lead excluído com sucesso!');
+      }
+    } catch (error) {
+      console.error('Erro ao excluir lead:', error);
+      alert('❌ Erro ao excluir lead. Verifique o console.');
     }
   };
 
