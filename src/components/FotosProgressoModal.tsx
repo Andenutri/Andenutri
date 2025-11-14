@@ -85,7 +85,7 @@ export default function FotosProgressoModal({ isOpen, onClose, clienteId, client
 
     setUploading(true);
     try {
-      let url = editingFoto?.url;
+      let url: string | null | undefined = editingFoto?.url;
 
       // Se é uma nova foto, fazer upload
       if (selectedFile && !editingFoto) {
