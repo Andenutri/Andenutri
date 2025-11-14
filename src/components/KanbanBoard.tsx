@@ -6,6 +6,7 @@ import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
 import EditarInformacoesBasicasModal from './EditarInformacoesBasicasModal';
 import { syncAllColumns, Column, getKanbanColumns, saveKanbanColumn, associarClientesPorStatus, limparDuplicatasColunasStatus } from '@/data/kanbanData';
+import { calcularVencimentoPrograma, obterStatusVencimento } from '@/utils/calcularVencimento';
 
 interface KanbanBoardProps {
   sidebarOpen: boolean;
@@ -527,24 +528,20 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
       
       case 'vencimento_proximo':
         return clientesOrdenados.sort((a, b) => {
-          const vencA = (a as any).data_compra_programa 
-            ? new Date((a as any).data_compra_programa).getTime() + (90 * 24 * 60 * 60 * 1000)
-            : Infinity;
-          const vencB = (b as any).data_compra_programa 
-            ? new Date((b as any).data_compra_programa).getTime() + (90 * 24 * 60 * 60 * 1000)
-            : Infinity;
-          return vencA - vencB; // Mais próximo primeiro
+          const vencA = calcularVencimentoPrograma((a as any).data_compra_programa, (a as any).duracao_programa_dias);
+          const vencB = calcularVencimentoPrograma((b as any).data_compra_programa, (b as any).duracao_programa_dias);
+          const timeA = vencA ? vencA.getTime() : Infinity;
+          const timeB = vencB ? vencB.getTime() : Infinity;
+          return timeA - timeB; // Mais próximo primeiro
         });
       
       case 'vencimento_distante':
         return clientesOrdenados.sort((a, b) => {
-          const vencA = (a as any).data_compra_programa 
-            ? new Date((a as any).data_compra_programa).getTime() + (90 * 24 * 60 * 60 * 1000)
-            : 0;
-          const vencB = (b as any).data_compra_programa 
-            ? new Date((b as any).data_compra_programa).getTime() + (90 * 24 * 60 * 60 * 1000)
-            : 0;
-          return vencB - vencA; // Mais distante primeiro
+          const vencA = calcularVencimentoPrograma((a as any).data_compra_programa, (a as any).duracao_programa_dias);
+          const vencB = calcularVencimentoPrograma((b as any).data_compra_programa, (b as any).duracao_programa_dias);
+          const timeA = vencA ? vencA.getTime() : 0;
+          const timeB = vencB ? vencB.getTime() : 0;
+          return timeB - timeA; // Mais distante primeiro
         });
       
       case 'compra_recente':
@@ -915,27 +912,22 @@ export default function KanbanBoard({ sidebarOpen, clientesExternos, onClientesC
                               <span className="font-semibold">{new Date((cliente as any).data_proxima_consulta).toLocaleDateString('pt-BR')}</span>
                             </div>
                           )}
-                          {(cliente as any).data_compra_programa && (
-                            <div className={`flex items-center gap-1 font-semibold ${
-                              (() => {
-                                const dataVencimento = new Date((cliente as any).data_compra_programa);
-                                dataVencimento.setDate(dataVencimento.getDate() + 90);
-                                const hoje = new Date();
-                                hoje.setHours(0, 0, 0, 0);
-                                dataVencimento.setHours(0, 0, 0, 0);
-                                if (dataVencimento < hoje) return 'text-red-600';
-                                if (dataVencimento.getTime() - hoje.getTime() <= 7 * 24 * 60 * 60 * 1000) return 'text-orange-600';
-                                return 'text-green-600';
-                              })()
-                            }`}>
-                              <span>📅 Vence:</span>
-                              <span>{(() => {
-                                const dataVencimento = new Date((cliente as any).data_compra_programa);
-                                dataVencimento.setDate(dataVencimento.getDate() + 90);
-                                return dataVencimento.toLocaleDateString('pt-BR');
-                              })()}</span>
-                            </div>
-                          )}
+                          {(cliente as any).data_compra_programa && (() => {
+                            const vencimento = calcularVencimentoPrograma(
+                              (cliente as any).data_compra_programa,
+                              (cliente as any).duracao_programa_dias
+                            );
+                            const status = obterStatusVencimento(vencimento);
+                            return vencimento ? (
+                              <div className={`flex items-center gap-1 font-semibold ${status.cor}`}>
+                                <span>📅 Vence:</span>
+                                <span>{vencimento.toLocaleDateString('pt-BR')}</span>
+                                {(cliente as any).duracao_programa_dias && (cliente as any).duracao_programa_dias !== 90 && (
+                                  <span className="text-xs ml-1">({(cliente as any).duracao_programa_dias} dias)</span>
+                                )}
+                              </div>
+                            ) : null;
+                          })()}
                         </div>
                         
                         {/* Divider */}

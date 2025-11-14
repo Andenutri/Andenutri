@@ -207,6 +207,7 @@ const CAMPOS_VALIDOS_CLIENTES = [
   'data_proxima_consulta',
   'suplementos',
   'data_compra_programa',
+  'duracao_programa_dias',
   'user_id',
   'codigo_reavaliacao',
   'data_criacao',

@@ -59,7 +59,7 @@ export default function LeadsView({ sidebarOpen }: { sidebarOpen: boolean }) {
   };
 
   const converterLeadEmCliente = async (lead: ClienteComFormulario) => {
-    if (!confirm(`Deseja converter ${lead.nome} de Lead para Cliente?\n\nIsso significa que ele(a) comprou o programa de 90 dias.`)) {
+    if (!confirm(`Deseja converter ${lead.nome} de Lead para Cliente?\n\nIsso significa que ele(a) comprou o programa.`)) {
       return;
     }
 

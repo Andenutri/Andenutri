@@ -3,6 +3,14 @@
 import { useState, useEffect } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
 import { saveCliente } from '@/data/clientesData';
+import { 
+  getPagamentosByCliente, 
+  createPagamento,
+  updatePagamento,
+  deletePagamento,
+  FORMAS_PAGAMENTO,
+  type Pagamento 
+} from '@/data/pagamentosData';
 
 interface EditarInformacoesBasicasModalProps {
   isOpen: boolean;
@@ -32,9 +40,28 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
     is_lead: (cliente as any)?.is_lead || false,
     data_proxima_consulta: (cliente as any)?.data_proxima_consulta || '',
     suplementos: (cliente as any)?.suplementos || '',
+    data_compra_programa: (cliente as any)?.data_compra_programa || '',
+    duracao_programa_dias: (cliente as any)?.duracao_programa_dias || 90,
   });
 
   const [saving, setSaving] = useState(false);
+  const [pagamentos, setPagamentos] = useState<Pagamento[]>([]);
+  const [loadingPagamentos, setLoadingPagamentos] = useState(false);
+  const [showPagamentoModal, setShowPagamentoModal] = useState(false);
+  const [pagamentoEditando, setPagamentoEditando] = useState<Pagamento | null>(null);
+  const [pagamentoFormData, setPagamentoFormData] = useState({
+    valor: '',
+    forma_pagamento: 'pix' as Pagamento['forma_pagamento'],
+    data_pagamento: new Date().toISOString().split('T')[0],
+    descricao: '',
+  });
+
+  // Carregar pagamentos quando o modal abrir
+  useEffect(() => {
+    if (isOpen && cliente?.id) {
+      loadPagamentos();
+    }
+  }, [isOpen, cliente?.id]);
 
   // Atualizar formData quando o cliente mudar ou o modal abrir
   useEffect(() => {
@@ -60,9 +87,98 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
         is_lead: (cliente as any)?.is_lead || false,
         data_proxima_consulta: (cliente as any)?.data_proxima_consulta || '',
         suplementos: (cliente as any)?.suplementos || '',
+        data_compra_programa: (cliente as any)?.data_compra_programa || '',
+        duracao_programa_dias: (cliente as any)?.duracao_programa_dias || 90,
       });
     }
   }, [isOpen, cliente]);
+
+  const loadPagamentos = async () => {
+    if (!cliente?.id) return;
+    setLoadingPagamentos(true);
+    try {
+      const pagamentosData = await getPagamentosByCliente(cliente.id);
+      setPagamentos(pagamentosData);
+    } catch (error) {
+      console.error('Erro ao carregar pagamentos:', error);
+    } finally {
+      setLoadingPagamentos(false);
+    }
+  };
+
+  const handleSalvarPagamento = async () => {
+    if (!cliente?.id) return;
+    if (!pagamentoFormData.valor || !pagamentoFormData.data_pagamento) {
+      alert('❌ Preencha valor e data do pagamento.');
+      return;
+    }
+
+    try {
+      const valorNumerico = parseFloat(pagamentoFormData.valor.replace(',', '.'));
+      if (isNaN(valorNumerico)) {
+        alert('❌ Valor inválido.');
+        return;
+      }
+
+      const pagamentoData = {
+        cliente_id: cliente.id,
+        valor: valorNumerico,
+        forma_pagamento: pagamentoFormData.forma_pagamento,
+        data_pagamento: new Date(pagamentoFormData.data_pagamento).toISOString(),
+        observacoes: pagamentoFormData.descricao || undefined,
+      };
+
+      if (pagamentoEditando?.id) {
+        await updatePagamento(pagamentoEditando.id, pagamentoData);
+      } else {
+        await createPagamento(pagamentoData);
+      }
+      
+      alert('✅ Pagamento salvo com sucesso!');
+      await loadPagamentos();
+      handleFecharPagamentoModal();
+    } catch (error) {
+      console.error('Erro ao salvar pagamento:', error);
+      alert('❌ Erro ao salvar pagamento. Verifique o console.');
+    }
+  };
+
+  const handleExcluirPagamento = async (pagamentoId: string) => {
+    if (!confirm('⚠️ Tem certeza que deseja excluir este pagamento?')) {
+      return;
+    }
+
+    try {
+      await deletePagamento(pagamentoId);
+      alert('✅ Pagamento excluído com sucesso!');
+      await loadPagamentos();
+    } catch (error) {
+      console.error('Erro ao excluir pagamento:', error);
+      alert('❌ Erro ao excluir pagamento. Verifique o console.');
+    }
+  };
+
+  const handleFecharPagamentoModal = () => {
+    setShowPagamentoModal(false);
+    setPagamentoEditando(null);
+    setPagamentoFormData({
+      valor: '',
+      forma_pagamento: 'pix',
+      data_pagamento: new Date().toISOString().split('T')[0],
+      descricao: '',
+    });
+  };
+
+  const handleEditarPagamento = (pagamento: Pagamento) => {
+    setPagamentoEditando(pagamento);
+    setPagamentoFormData({
+      valor: pagamento.valor.toString(),
+      forma_pagamento: pagamento.forma_pagamento,
+      data_pagamento: new Date(pagamento.data_pagamento).toISOString().split('T')[0],
+      descricao: pagamento.observacoes || '',
+    });
+    setShowPagamentoModal(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +213,8 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
         is_lead: isLeadFinal,
         data_proxima_consulta: formData.data_proxima_consulta || undefined,
         suplementos: formData.suplementos || undefined,
+        data_compra_programa: formData.data_compra_programa || undefined,
+        duracao_programa_dias: formData.duracao_programa_dias || 90,
       };
 
       if (cliente?.id) {
@@ -374,7 +492,7 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
                   </span>
                 </label>
               </div>
-              <div className="col-span-2">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">📅 Próxima Consulta</label>
                 <input
                   type="date"
@@ -384,8 +502,118 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
                 />
                 <p className="text-xs text-gray-500 mt-1">Defina a data da próxima consulta com este cliente</p>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">📅 Data de Compra do Programa</label>
+                <input
+                  type="date"
+                  value={formData.data_compra_programa ? new Date(formData.data_compra_programa).toISOString().split('T')[0] : ''}
+                  onChange={(e) => setFormData({ ...formData, data_compra_programa: e.target.value || undefined })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">Data em que o cliente comprou o programa</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">⏱️ Duração do Programa (dias)</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={formData.duracao_programa_dias}
+                  onChange={(e) => setFormData({ ...formData, duracao_programa_dias: parseInt(e.target.value) || 90 })}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-amber-500 focus:outline-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">Duração do programa em dias (ex: 30, 60, 90 dias)</p>
+              </div>
             </div>
           </div>
+
+          {/* Pagamentos */}
+          {cliente?.id && (
+            <div className="border-2 border-purple-200 rounded-xl p-6 bg-purple-50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-purple-700">💰 Pagamentos</h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPagamentoEditando(null);
+                    setPagamentoFormData({
+                      valor: '',
+                      forma_pagamento: 'pix',
+                      data_pagamento: new Date().toISOString().split('T')[0],
+                      descricao: '',
+                    });
+                    setShowPagamentoModal(true);
+                  }}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-semibold"
+                >
+                  ➕ Adicionar Pagamento
+                </button>
+              </div>
+
+              {loadingPagamentos ? (
+                <div className="text-center py-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-4 border-b-4 border-purple-600 mx-auto"></div>
+                </div>
+              ) : pagamentos.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-4">Nenhum pagamento registrado</p>
+              ) : (
+                <div className="space-y-2">
+                  {pagamentos.map((pagamento) => {
+                    const formaPagamento = FORMAS_PAGAMENTO.find(f => f.value === pagamento.forma_pagamento);
+                    return (
+                      <div
+                        key={pagamento.id}
+                        className="bg-white rounded-lg p-3 border-2 border-gray-200 flex items-center justify-between"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-gray-800">
+                              R$ {Number(pagamento.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                              {formaPagamento?.label || pagamento.forma_pagamento}
+                            </span>
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            📅 {new Date(pagamento.data_pagamento).toLocaleDateString('pt-BR')}
+                            {pagamento.observacoes && (
+                              <span className="ml-2">• {pagamento.observacoes}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleEditarPagamento(pagamento)}
+                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                          >
+                            ✏️ Editar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleExcluirPagamento(pagamento.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="mt-4 pt-4 border-t border-purple-200">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-gray-700">Total:</span>
+                      <span className="text-lg font-bold text-purple-700">
+                        R$ {pagamentos.reduce((sum, p) => sum + Number(p.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Botões */}
           <div className="flex gap-4 pt-4 border-t">
@@ -406,6 +634,86 @@ export default function EditarInformacoesBasicasModal({ isOpen, onClose, cliente
           </div>
         </form>
       </div>
+
+      {/* Modal de Pagamento */}
+      {showPagamentoModal && (
+        <div className="fixed inset-0 bg-black/70 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-purple-700 mb-4">
+              {pagamentoEditando ? '✏️ Editar Pagamento' : '➕ Adicionar Pagamento'}
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Valor (R$)</label>
+                <input
+                  type="text"
+                  value={pagamentoFormData.valor}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^\d,.-]/g, '');
+                    setPagamentoFormData({ ...pagamentoFormData, valor: value });
+                  }}
+                  placeholder="0,00"
+                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Forma de Pagamento</label>
+                <select
+                  value={pagamentoFormData.forma_pagamento}
+                  onChange={(e) => setPagamentoFormData({ ...pagamentoFormData, forma_pagamento: e.target.value as Pagamento['forma_pagamento'] })}
+                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+                >
+                  {FORMAS_PAGAMENTO.map(forma => (
+                    <option key={forma.value} value={forma.value}>
+                      {forma.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data do Pagamento</label>
+                <input
+                  type="date"
+                  value={pagamentoFormData.data_pagamento}
+                  onChange={(e) => setPagamentoFormData({ ...pagamentoFormData, data_pagamento: e.target.value })}
+                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <textarea
+                  value={pagamentoFormData.descricao}
+                  onChange={(e) => setPagamentoFormData({ ...pagamentoFormData, descricao: e.target.value })}
+                  placeholder="Observações sobre o pagamento..."
+                  rows={3}
+                  className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button
+                type="button"
+                onClick={handleFecharPagamentoModal}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSalvarPagamento}
+                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

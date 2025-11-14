@@ -16,6 +16,8 @@ import { getAvaliacoesByCliente } from '@/data/avaliacoesData';
 import { getAvaliacoesEmocionaisCliente, getAvaliacoesComportamentaisCliente } from '@/data/avaliacoesEmocionaisData';
 import { getAllClientes, deleteCliente } from '@/data/clientesData';
 import { getPagamentosByCliente, calcularTotalPagamentos, FORMAS_PAGAMENTO } from '@/data/pagamentosData';
+import FotosProgressoModal from './FotosProgressoModal';
+import { calcularVencimentoPrograma, obterStatusVencimento } from '@/utils/calcularVencimento';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -48,6 +50,7 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente: clienteIn
   const [loadingReavaliacoes, setLoadingReavaliacoes] = useState(false);
   const [copiando, setCopiando] = useState(false);
   const [excluindo, setExcluindo] = useState(false);
+  const [showFotosModal, setShowFotosModal] = useState(false);
 
   // Sincronizar cliente quando o prop mudar
   useEffect(() => {
@@ -113,24 +116,22 @@ WhatsApp: ${cliente.whatsapp || 'Não informado'}
 Instagram: ${cliente.instagram || 'Não informado'}
 Endereço: ${cliente.endereco_completo || 'Não informado'}
 Status do Programa: ${cliente.status_plano || 'Não definido'}
-${(cliente as any).is_lead ? 'Tipo: LEAD (Ainda não comprou programa de 90 dias)' : 'Tipo: CLIENTE (Comprou programa de 90 dias)'}
+${(cliente as any).is_lead ? 'Tipo: LEAD (Ainda não comprou programa)' : 'Tipo: CLIENTE (Comprou programa)'}
 ${(cliente as any).data_compra_programa ? `Data de Compra do Programa: ${new Date((cliente as any).data_compra_programa).toLocaleDateString('pt-BR')}` : ''}
+${(cliente as any).data_compra_programa ? `Duração do Programa: ${(cliente as any).duracao_programa_dias || 90} dias` : ''}
 ${(cliente as any).data_compra_programa ? (() => {
-  const dataVencimento = new Date((cliente as any).data_compra_programa);
-  dataVencimento.setDate(dataVencimento.getDate() + 90);
-  const hoje = new Date();
-  hoje.setHours(0, 0, 0, 0);
-  dataVencimento.setHours(0, 0, 0, 0);
-  const diasRestantes = Math.ceil((dataVencimento.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+  const vencimento = calcularVencimentoPrograma((cliente as any).data_compra_programa, (cliente as any).duracao_programa_dias);
+  if (!vencimento) return '';
+  const status = obterStatusVencimento(vencimento);
   let statusVencimento = '';
-  if (diasRestantes < 0) {
-    statusVencimento = ` (VENCIDO há ${Math.abs(diasRestantes)} dias)`;
-  } else if (diasRestantes === 0) {
+  if (status.status === 'vencido') {
+    statusVencimento = ` (VENCIDO há ${status.diasRestantes} dias)`;
+  } else if (status.diasRestantes === 0) {
     statusVencimento = ' (VENCE HOJE)';
-  } else if (diasRestantes <= 7) {
-    statusVencimento = ` (Vence em ${diasRestantes} dias)`;
+  } else if (status.status === 'proximo') {
+    statusVencimento = ` (Vence em ${status.diasRestantes} dias)`;
   }
-  return `Vencimento do Programa: ${dataVencimento.toLocaleDateString('pt-BR')}${statusVencimento}`;
+  return `Vencimento do Programa: ${vencimento.toLocaleDateString('pt-BR')}${statusVencimento}`;
 })() : ''}
 ${cliente.codigo_reavaliacao ? `Código de Reavaliação: ${cliente.codigo_reavaliacao}` : ''}
 ${cliente.perfil ? `Perfil: ${cliente.perfil}` : ''}
@@ -447,6 +448,55 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
           </div>
 
           <div className="p-4 md:p-6 space-y-4">
+            {/* Status do Cliente - Sempre Visível */}
+            <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border-2 border-gray-300 shadow-md">
+              <div className="text-base font-bold text-gray-700 mb-3">📊 Status do Cliente</div>
+              <div className="flex gap-3 items-center flex-wrap">
+                {/* Status de Identificação (Lead/Cliente) */}
+                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-300 shadow-sm">
+                  <div className={`w-4 h-4 rounded-full ${
+                    (cliente as any).is_lead ? 'bg-purple-500' : 'bg-green-500'
+                  }`}></div>
+                  <span className="text-sm font-semibold">
+                    {(cliente as any).is_lead ? 'Lead' : 'Cliente'}
+                  </span>
+                </div>
+                
+                {/* Status do Programa */}
+                <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-300 shadow-sm">
+                  <div className={`w-4 h-4 rounded-full ${
+                    cliente.status_plano === 'ativo' ? 'bg-green-500' :
+                    cliente.status_plano === 'inativo' ? 'bg-red-500' :
+                    'bg-yellow-500'
+                  }`}></div>
+                  <span className="text-sm font-semibold">
+                    Programa: {
+                      cliente.status_plano === 'ativo' ? 'Ativo' :
+                      cliente.status_plano === 'inativo' ? 'Inativo' :
+                      cliente.status_plano === 'pausado' ? 'Pausado' :
+                      cliente.status_plano || 'Não definido'
+                    }
+                  </span>
+                </div>
+                
+                {/* Status Herbalife */}
+                {(cliente as any).status_herbalife && (cliente as any).status_herbalife !== 'nao_pertence' && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-lg border border-gray-300 shadow-sm">
+                    <div className={`w-4 h-4 rounded-full ${
+                      (cliente as any).status_herbalife === 'ativo' ? 'bg-blue-500' : 'bg-gray-400'
+                    }`}></div>
+                    <span className="text-sm font-semibold">
+                      Herbalife: {
+                        (cliente as any).status_herbalife === 'ativo' ? 'Ativo' :
+                        (cliente as any).status_herbalife === 'inativo' ? 'Inativo' :
+                        (cliente as any).status_herbalife
+                      }
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Informações Básicas */}
             <div className="border-2 border-amber-100 rounded-xl bg-amber-50">
               <div className="flex items-center gap-2">
@@ -456,6 +506,13 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
                 >
                   <h3>📋 Informações Básicas</h3>
                   <span className="text-2xl">{sectionsExpanded.basicas ? '−' : '+'}</span>
+                </button>
+                <button
+                  onClick={() => setShowFotosModal(true)}
+                  className="mx-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-semibold"
+                  title="Gerenciar fotos de progresso"
+                >
+                  📸 Fotos
                 </button>
                 <button
                   onClick={() => setShowEditarBasicasModal(true)}
@@ -468,38 +525,6 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
               
               {sectionsExpanded.basicas && (
                 <div className="p-4 border-t border-amber-200">
-                  {/* Bolinhas de Status */}
-                  <div className="mb-4 p-3 bg-white rounded-lg border-2 border-gray-200">
-                    <div className="text-xs font-semibold text-gray-600 mb-2">🔴 Status de Identificação</div>
-                    <div className="flex gap-4 items-center flex-wrap">
-                      {/* Status do Programa */}
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-full ${
-                          cliente.status_plano === 'ativo' ? 'bg-green-500' :
-                          cliente.status_plano === 'inativo' ? 'bg-red-500' :
-                          'bg-yellow-500'
-                        }`}></div>
-                        <span className="text-sm font-semibold">Programa: {cliente.status_plano}</span>
-                      </div>
-                      {/* Status Herbalife */}
-                      {(cliente as any).status_herbalife && (
-                        <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded-full ${
-                            (cliente as any).status_herbalife === 'ativo' ? 'bg-blue-500' : 'bg-gray-400'
-                          }`}></div>
-                          <span className="text-sm font-semibold">Herbalife: {(cliente as any).status_herbalife}</span>
-                        </div>
-                      )}
-                      {/* Status Lead */}
-                      {(cliente as any).is_lead && (
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded-full bg-purple-500"></div>
-                          <span className="text-sm font-semibold text-purple-700">Lead</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div><strong>Nome:</strong> {cliente.nome}</div>
@@ -523,32 +548,29 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
                           </div>
                         </div>
                       )}
-                      {(cliente as any).data_compra_programa && (
-                        <>
-                          <div><strong>Data de Compra do Programa:</strong> {new Date((cliente as any).data_compra_programa).toLocaleDateString('pt-BR')}</div>
-                          <div>
-                            <strong>Vencimento do Programa:</strong> 
-                            <span className={`ml-2 font-semibold ${
-                              (() => {
-                                const dataVencimento = new Date((cliente as any).data_compra_programa);
-                                dataVencimento.setDate(dataVencimento.getDate() + 90);
-                                const hoje = new Date();
-                                hoje.setHours(0, 0, 0, 0);
-                                dataVencimento.setHours(0, 0, 0, 0);
-                                if (dataVencimento < hoje) return 'text-red-600';
-                                if (dataVencimento.getTime() - hoje.getTime() <= 7 * 24 * 60 * 60 * 1000) return 'text-orange-600';
-                                return 'text-green-600';
-                              })()
-                            }`}>
-                              {(() => {
-                                const dataVencimento = new Date((cliente as any).data_compra_programa);
-                                dataVencimento.setDate(dataVencimento.getDate() + 90);
-                                return dataVencimento.toLocaleDateString('pt-BR');
-                              })()}
-                            </span>
-                          </div>
-                        </>
-                      )}
+                      {(cliente as any).data_compra_programa && (() => {
+                        const vencimento = calcularVencimentoPrograma(
+                          (cliente as any).data_compra_programa,
+                          (cliente as any).duracao_programa_dias
+                        );
+                        const status = obterStatusVencimento(vencimento);
+                        return (
+                          <>
+                            <div><strong>Data de Compra do Programa:</strong> {new Date((cliente as any).data_compra_programa).toLocaleDateString('pt-BR')}</div>
+                            <div>
+                              <strong>Duração do Programa:</strong> {(cliente as any).duracao_programa_dias || 90} dias
+                            </div>
+                            {vencimento && (
+                              <div>
+                                <strong>Vencimento do Programa:</strong> 
+                                <span className={`ml-2 font-semibold ${status.cor}`}>
+                                  {vencimento.toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                     {/* Campo Perfil/Descrição */}
                     {(cliente as any).perfil && (
@@ -1124,6 +1146,16 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
           isOpen={showAgendarReavaliacaoModal}
           onClose={() => setShowAgendarReavaliacaoModal(false)}
           cliente={cliente}
+        />
+      )}
+
+      {/* Modal de Fotos de Progresso */}
+      {showFotosModal && cliente && (
+        <FotosProgressoModal
+          isOpen={showFotosModal}
+          onClose={() => setShowFotosModal(false)}
+          clienteId={cliente.id}
+          clienteNome={cliente.nome}
         />
       )}
     </>

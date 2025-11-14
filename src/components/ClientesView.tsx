@@ -6,6 +6,7 @@ import ClientList from './ClientList';
 import KanbanBoard from './KanbanBoard';
 import AddClientModal from './AddClientModal';
 import ClientDetailsModal from './ClientDetailsModal';
+import { calcularVencimentoPrograma, obterStatusVencimento } from '@/utils/calcularVencimento';
 
 type ViewMode = 'lista' | 'trello';
 
@@ -237,26 +238,21 @@ export default function ClientesView({ sidebarOpen, initialViewMode = 'lista' }:
                   {cliente.formulario && (
                     <p className="text-xs md:text-sm text-gray-600 mb-1">⚖️ {cliente.formulario.peso_atual}kg → {cliente.formulario.peso_desejado}kg</p>
                   )}
-                  {(cliente as any).data_compra_programa && (
-                    <p className={`text-xs md:text-sm mb-1 font-semibold ${
-                      (() => {
-                        const dataVencimento = new Date((cliente as any).data_compra_programa);
-                        dataVencimento.setDate(dataVencimento.getDate() + 90);
-                        const hoje = new Date();
-                        hoje.setHours(0, 0, 0, 0);
-                        dataVencimento.setHours(0, 0, 0, 0);
-                        if (dataVencimento < hoje) return 'text-red-600';
-                        if (dataVencimento.getTime() - hoje.getTime() <= 7 * 24 * 60 * 60 * 1000) return 'text-orange-600';
-                        return 'text-green-600';
-                      })()
-                    }`}>
-                      📅 Vence: {(() => {
-                        const dataVencimento = new Date((cliente as any).data_compra_programa);
-                        dataVencimento.setDate(dataVencimento.getDate() + 90);
-                        return dataVencimento.toLocaleDateString('pt-BR');
-                      })()}
-                    </p>
-                  )}
+                  {(cliente as any).data_compra_programa && (() => {
+                    const vencimento = calcularVencimentoPrograma(
+                      (cliente as any).data_compra_programa,
+                      (cliente as any).duracao_programa_dias
+                    );
+                    const status = obterStatusVencimento(vencimento);
+                    return vencimento ? (
+                      <p className={`text-xs md:text-sm mb-1 font-semibold ${status.cor}`}>
+                        📅 Vence: {vencimento.toLocaleDateString('pt-BR')}
+                        {(cliente as any).duracao_programa_dias && (cliente as any).duracao_programa_dias !== 90 && (
+                          <span className="ml-1">({(cliente as any).duracao_programa_dias} dias)</span>
+                        )}
+                      </p>
+                    ) : null;
+                  })()}
                 </div>
               ))}
             </div>
