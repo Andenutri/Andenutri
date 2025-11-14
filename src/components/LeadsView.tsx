@@ -219,9 +219,10 @@ export default function LeadsView({ sidebarOpen }: { sidebarOpen: boolean }) {
       {selectedClient && (
         <ClientDetailsModal
           isOpen={!!selectedClient}
-          onClose={() => {
+          onClose={async () => {
+            // Recarregar leads antes de fechar para garantir dados atualizados
+            await loadLeads();
             setSelectedClient(null);
-            loadLeads();
           }}
           cliente={selectedClient}
         />

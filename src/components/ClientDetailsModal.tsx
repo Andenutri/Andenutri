@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ClienteComFormulario } from '@/data/mockClientes';
 import AddClientModal from './AddClientModal';
 import ReavaliacaoModal from './ReavaliacaoModal';
@@ -14,6 +14,7 @@ import AgendarReavaliacaoModal from './AgendarReavaliacaoModal';
 import { getReavaliacoesCliente, type ReavaliacaoResposta } from '@/data/reavaliacoesData';
 import { getAvaliacoesByCliente } from '@/data/avaliacoesData';
 import { getAvaliacoesEmocionaisCliente, getAvaliacoesComportamentaisCliente } from '@/data/avaliacoesEmocionaisData';
+import { getAllClientes } from '@/data/clientesData';
 
 interface ClientDetailsModalProps {
   isOpen: boolean;
@@ -21,7 +22,8 @@ interface ClientDetailsModalProps {
   cliente: ClienteComFormulario | null;
 }
 
-export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientDetailsModalProps) {
+export default function ClientDetailsModal({ isOpen, onClose, cliente: clienteInicial }: ClientDetailsModalProps) {
+  const [cliente, setCliente] = useState<ClienteComFormulario | null>(clienteInicial);
   const [sectionsExpanded, setSectionsExpanded] = useState({
     basicas: true, // Mantém aberta por padrão
     preconsulta: false, // Fechada por padrão
@@ -44,6 +46,33 @@ export default function ClientDetailsModal({ isOpen, onClose, cliente }: ClientD
   const [reavaliacoes, setReavaliacoes] = useState<ReavaliacaoResposta[]>([]);
   const [loadingReavaliacoes, setLoadingReavaliacoes] = useState(false);
   const [copiando, setCopiando] = useState(false);
+
+  // Sincronizar cliente quando o prop mudar
+  useEffect(() => {
+    setCliente(clienteInicial);
+  }, [clienteInicial]);
+
+  // Função para recarregar dados do cliente sem recarregar a página
+  const recarregarCliente = async () => {
+    if (!cliente?.id) return;
+    
+    try {
+      console.log('🔄 Recarregando dados do cliente...');
+      const todosClientes = await getAllClientes();
+      const clienteAtualizado = todosClientes.find(c => c.id === cliente.id);
+      
+      if (clienteAtualizado) {
+        setCliente(clienteAtualizado);
+        console.log('✅ Dados do cliente recarregados');
+        // Notificar o componente pai para atualizar a lista também (sem fechar o modal)
+        // O componente pai pode recarregar sua lista se necessário
+      } else {
+        console.warn('⚠️ Cliente não encontrado após atualização');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao recarregar cliente:', error);
+    }
+  };
 
   const toggleSection = (section: keyof typeof sectionsExpanded) => {
     setSectionsExpanded(prev => ({
@@ -919,10 +948,10 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
       {showEditarBasicasModal && (
         <EditarInformacoesBasicasModal
           isOpen={showEditarBasicasModal}
-          onClose={() => {
+          onClose={async () => {
             setShowEditarBasicasModal(false);
             if (cliente?.id) {
-              window.location.reload();
+              await recarregarCliente();
             }
           }}
           cliente={cliente}
@@ -933,10 +962,10 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
       {showEditarPreConsultaModal && (
         <EditarPreConsultaModal
           isOpen={showEditarPreConsultaModal}
-          onClose={() => {
+          onClose={async () => {
             setShowEditarPreConsultaModal(false);
             if (cliente?.id) {
-              window.location.reload();
+              await recarregarCliente();
             }
           }}
           cliente={cliente}
@@ -947,10 +976,10 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
       {showEditarAvaliacaoFisicaModal && (
         <EditarAvaliacaoFisicaModal
           isOpen={showEditarAvaliacaoFisicaModal}
-          onClose={() => {
+          onClose={async () => {
             setShowEditarAvaliacaoFisicaModal(false);
             if (cliente?.id) {
-              window.location.reload();
+              await recarregarCliente();
             }
           }}
           cliente={cliente}
@@ -961,10 +990,10 @@ Fim da Ficha - Gerado em ${new Date().toLocaleString('pt-BR')}
       {showEditarAvaliacaoEmocionalModal && (
         <EditarAvaliacaoEmocionalModal
           isOpen={showEditarAvaliacaoEmocionalModal}
-          onClose={() => {
+          onClose={async () => {
             setShowEditarAvaliacaoEmocionalModal(false);
             if (cliente?.id) {
-              window.location.reload();
+              await recarregarCliente();
             }
           }}
           cliente={cliente}

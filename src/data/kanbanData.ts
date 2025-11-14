@@ -351,6 +351,27 @@ export async function addClientToColumn(columnId: string, clienteId: string) {
       throw updateError;
     }
 
+    // Verificar se a atualização foi bem-sucedida
+    const { data: colunaVerificada, error: verifyError } = await supabase
+      .from('kanban_colunas')
+      .select('clientes_ids')
+      .eq('id', columnId)
+      .single();
+
+    if (verifyError) {
+      console.error('❌ Erro ao verificar coluna após atualização:', verifyError);
+      throw verifyError;
+    }
+
+    const clienteFoiAdicionado = (colunaVerificada?.clientes_ids || [])
+      .map((id: any) => String(id))
+      .includes(String(clienteId));
+
+    if (!clienteFoiAdicionado) {
+      console.error(`❌ Cliente ${clienteId} não foi encontrado na coluna após atualização!`);
+      throw new Error(`Falha ao adicionar cliente ${clienteId} à coluna ${columnId}`);
+    }
+
     console.log(`✅ Cliente ${clienteId} adicionado à coluna ${coluna.nome} (${columnId})`);
   } catch (error) {
     console.error('❌ Erro ao adicionar cliente à coluna:', error);
@@ -406,6 +427,27 @@ export async function removeClientFromColumn(columnId: string, clienteId: string
     if (updateError) {
       console.error('❌ Erro ao atualizar coluna:', updateError);
       throw updateError;
+    }
+
+    // Verificar se a remoção foi bem-sucedida
+    const { data: colunaVerificada, error: verifyError } = await supabase
+      .from('kanban_colunas')
+      .select('clientes_ids')
+      .eq('id', columnId)
+      .single();
+
+    if (verifyError) {
+      console.error('❌ Erro ao verificar coluna após remoção:', verifyError);
+      throw verifyError;
+    }
+
+    const clienteFoiRemovido = !(colunaVerificada?.clientes_ids || [])
+      .map((id: any) => String(id))
+      .includes(clienteIdStr);
+
+    if (!clienteFoiRemovido && clientesIdsStr.includes(clienteIdStr)) {
+      console.error(`❌ Cliente ${clienteId} ainda está na coluna após remoção!`);
+      throw new Error(`Falha ao remover cliente ${clienteId} da coluna ${columnId}`);
     }
 
     console.log(`✅ Cliente ${clienteId} removido da coluna ${columnId}`);
