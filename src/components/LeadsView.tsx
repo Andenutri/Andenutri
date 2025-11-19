@@ -9,6 +9,7 @@ import ClientDetailsModal from './ClientDetailsModal';
 export default function LeadsView({ sidebarOpen }: { sidebarOpen: boolean }) {
   const [leads, setLeads] = useState<ClienteComFormulario[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [selectedClient, setSelectedClient] = useState<ClienteComFormulario | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -42,6 +43,9 @@ export default function LeadsView({ sidebarOpen }: { sidebarOpen: boolean }) {
       console.error('Erro ao carregar leads:', error);
     } finally {
       setLoading(false);
+      if (initialLoading) {
+        setInitialLoading(false);
+      }
     }
   };
 
@@ -101,7 +105,7 @@ export default function LeadsView({ sidebarOpen }: { sidebarOpen: boolean }) {
     );
   });
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
         <div className="flex items-center justify-center min-h-screen">
@@ -116,6 +120,14 @@ export default function LeadsView({ sidebarOpen }: { sidebarOpen: boolean }) {
 
   return (
     <div className={`transition-all duration-300 ${sidebarOpen ? 'ml-80' : 'ml-0'}`}>
+      {loading && (
+        <div className="fixed top-4 right-4 z-40 pointer-events-none">
+          <div className="bg-white/90 backdrop-blur rounded-xl shadow-lg px-4 py-2 flex items-center gap-2 text-sm text-gray-600 border border-purple-100">
+            <span className="inline-block h-4 w-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+            Atualizando leads...
+          </div>
+        </div>
+      )}
       <div className="bg-white shadow-md px-8 py-6 flex items-center justify-between">
         <div className="ml-24">
           <h1 className="text-3xl font-bold text-purple-700">📋 Leads e Prospectos</h1>
